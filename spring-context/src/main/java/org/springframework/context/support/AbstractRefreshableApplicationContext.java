@@ -119,7 +119,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 * This implementation performs an actual refresh of this context's underlying
 	 * bean factory, shutting down the previous bean factory (if any) and
 	 * initializing a fresh bean factory for the next phase of the context's lifecycle.
-	 *
+	 * 先关再启
 	 * 对BeanFactory进行刷新操作，关闭之前的BeanFactory(如果有)
 	 * 并且为context初始化一个新的BeanFactory
 	 */
@@ -140,8 +140,9 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 			//自定义bean工厂的一些属性（是否允许相同bean定义进行覆盖，是否允许循环依赖）
 			customizeBeanFactory(beanFactory);
 			//加载应用中的 BeanDefinitions
+			// org.springframework.context.support.AbstractXmlApplicationContext.loadBeanDefinitions(org.springframework.beans.factory.support.DefaultListableBeanFactory)
 			loadBeanDefinitions(beanFactory);
-			//加锁：赋值，关闭等操作互斥
+			//加锁：赋值，关闭,获取等操作互斥，即读写互斥
 			synchronized (this.beanFactoryMonitor) {
 				this.beanFactory = beanFactory;
 			}

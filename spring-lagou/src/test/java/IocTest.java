@@ -3,6 +3,8 @@ import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import java.util.Map;
+
 /**
  * @Author 应癫
  */
@@ -43,5 +45,12 @@ public class IocTest {
 		ApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
 		LagouBean lagouBean = applicationContext.getBean(LagouBean.class);
 		lagouBean.print();
+	}
+
+	@Test
+	public void testSystem(){
+		Map properties = System.getProperties();
+		Map getenv = System.getenv();
+		System.out.println(properties);
 	}
 }

@@ -121,6 +121,7 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 * @see #customizePropertySources(MutablePropertySources)
 	 */
 	public AbstractEnvironment() {
+		// 定制化属性资源，由子类实现，即StandardEnvironment中实现
 		customizePropertySources(this.propertySources);
 	}
 

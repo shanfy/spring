@@ -506,6 +506,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 	/**
 	 * Return the list of statically specified ApplicationListeners.
+	 * 13个方法
 	 */
 	public Collection<ApplicationListener<?>> getApplicationListeners() {
 		return this.applicationListeners;
@@ -521,7 +522,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			 * 	表示在真正做refresh之前准备做的事情：
 			 * 		记录Spring容器的启动时间，用于后续启动时长统计
 			 * 		设置此容器为活跃状态，撤销关闭状态
-			 *		验证环境信息里一些必须存在的属性等
+			 *		设置和严整系统环境信息里一些必须存在的属性等
+			 *		设置和初始化监听器和事件的集合对象
 			 */
 			prepareRefresh();
 
@@ -536,6 +538,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			/**
 			 * Prepare the bean factory for use in this context.
 			 * BeanFactory 的预准备工作，（BeanFactory进⾏⼀些设置，⽐如context的类加载器等
+			 * 	添加了ApplicationContextAwareProcessor， ApplicationListenerDetector 这两个beanPostPerocessor
 			 */
 			prepareBeanFactory(beanFactory);
 
@@ -567,7 +570,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				/**
 				 * Initialize event multicaster for this context.
-				 * 初始化事件派发器
+				 * 初始化事件广播器（事件派发器），applicationEventMulticaster
 				 */
 				initApplicationEventMulticaster();
 
@@ -656,7 +659,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		getEnvironment().validateRequiredProperties();
 
 		// Store pre-refresh ApplicationListeners...
-		//初始化应用初始化的监听
+		//初始化应用初始化的监听.spring中为空，留作扩展，如Spring Boot中是有值的
 		if (this.earlyApplicationListeners == null) {
 			this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
 		}
@@ -668,6 +671,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// Allow for the collection of early ApplicationEvents,
 		// to be published once the multicaster is available...
+		// 早期初始化监听事件的集合
 		this.earlyApplicationEvents = new LinkedHashSet<>();
 	}
 
@@ -685,6 +689,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @return the fresh BeanFactory instance
 	 * @see #refreshBeanFactory()
 	 * @see #getBeanFactory()
+	 * 位于 @see org.springframework.context.support.AbstractRefreshableApplicationContext#refreshBeanFactory()
 	 */
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
 		refreshBeanFactory();
@@ -698,11 +703,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		// Tell the internal bean factory to use the context's class loader etc.
+		// 设置类加载器
 		beanFactory.setBeanClassLoader(getClassLoader());
+		// 设置SPEL解析器
 		beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
+		// 设置忽略的aware接口实现，前期不做处理，后续实例化bean的时候再处理
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
@@ -751,6 +759,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	}
 
 	/**
+	 * 实例化并执行 BeanFactoryPostProcessor 对应的bean
+	 * 如果有给定顺序的bean，就按照给定的顺序执行,最后执行没有排序的bean
+	 * 单例对象实例化之前调用
 	 * Instantiate and invoke all registered BeanFactoryPostProcessor beans,
 	 * respecting explicit order if given.
 	 * <p>Must be called before singleton instantiation.
@@ -767,6 +778,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	}
 
 	/**
+	 * 实例化并注册 BeanPostProcessor 对应的bean
+	 * 如果有给定顺序的bean，就按照给定的顺序执行,最后执行没有排序的bean
+	 * 单例对象实例化之前调用
 	 * Instantiate and register all BeanPostProcessor beans,
 	 * respecting explicit order if given.
 	 * <p>Must be called before any instantiation of application beans.
@@ -913,11 +927,13 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// Register a default embedded value resolver if no bean post-processor
 		// (such as a PropertyPlaceholderConfigurer bean) registered any before:
 		// at this point, primarily for resolution in annotation attribute values.
+		// 判断有没有内置的值处理器（可看注释-,没有时，会设置一个，一般会有如PropertyPlaceholderConfigurer）
 		if (!beanFactory.hasEmbeddedValueResolver()) {
 			beanFactory.addEmbeddedValueResolver(strVal -> getEnvironment().resolvePlaceholders(strVal));
 		}
 
 		// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early.
+		// aop织入工作 org.springframework.context.support.AbstractApplicationContext.prepareBeanFactory 添加过
 		String[] weaverAwareNames = beanFactory.getBeanNamesForType(LoadTimeWeaverAware.class, false, false);
 		for (String weaverAwareName : weaverAwareNames) {
 			getBean(weaverAwareName);

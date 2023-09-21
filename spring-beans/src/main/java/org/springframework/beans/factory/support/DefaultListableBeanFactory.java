@@ -825,7 +825,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		for (String beanName : beanNames) {
 			//因为bean本身存在父子关系，子bean可以继承父bean的属性，这里进行合并
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
-			//实例化所有非抽象，单例且设置为非懒加载的bean
+			//实例化所有非抽象（Abstract标签用来定义抽象类，不为此类创建对象，常与parent配合使用），单例且设置为非懒加载的bean
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
 				//spring中的bean分为工厂bean和普通bean,但是都会走getBean方法进行处理
 				if (isFactoryBean(beanName)) {
