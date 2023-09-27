@@ -347,6 +347,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 							throw ex;
 						}
 					});
+					// 针对FactoryBean的处理，前面会实例化FactoryBean本身的对象，这里会调用getObject得到实际代表的对象（疑问：这里如果循环依赖怎么办呢）
 					bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
 				}
 

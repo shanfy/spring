@@ -169,6 +169,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		synchronized (this.singletonObjects) {
 			if (!this.singletonObjects.containsKey(beanName)) {
 				this.singletonFactories.put(beanName, singletonFactory);
+				// 这种情况是什么时候会发生呢
 				this.earlySingletonObjects.remove(beanName);
 				this.registeredSingletons.add(beanName);
 			}
@@ -204,6 +205,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					if (singletonFactory != null) {
 						//如果三级缓存有，此时通过getObject方法获取到一个eraly bean
 						// 对象，将其加入到二级缓存中(二级缓存中的对象仍不完整，但是可以做一些扩展动作)，并从三级缓存中移除
+						// 正，从此处可以看出二级缓存其实不存在也行，这里只是缓存了调用了代理方法的暴露对象，仍然是不完整的，但是省去了再次调用三级缓存代理方法的需要，猜测是处于效率的一个优化
 						singletonObject = singletonFactory.getObject();
 						this.earlySingletonObjects.put(beanName, singletonObject);
 						this.singletonFactories.remove(beanName);
