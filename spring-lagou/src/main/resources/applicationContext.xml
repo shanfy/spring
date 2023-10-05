@@ -9,7 +9,9 @@
         https://www.springframework.org/schema/aop/spring-aop.xsd
         http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
 
-	<!--<context:component-scan base-package="com.lagou.edu"/>-->
+	<!-- component-scan标签解析时会向容器中注册几个内部使用的bean ->ComponentScanBeanDefinitionParser-->
+	<context:component-scan base-package="com.lagou.edu"/>
+	<!--<context:property-placeholder location="classpath:db.properties"/> -->
 	<!--循环依赖问题-->
 	<bean id="lagouBean" class="com.lagou.edu.LagouBean" init-method="initMethod" >
 		<property name="ItBean" ref="itBean"/>

@@ -122,6 +122,7 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 */
 	public AbstractEnvironment() {
 		// 定制化属性资源，由子类实现，即StandardEnvironment中实现
+		// org.springframework.core.env.StandardEnvironment.customizePropertySources
 		customizePropertySources(this.propertySources);
 	}
 

@@ -123,7 +123,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	@Nullable
 	private ClassLoader tempClassLoader;
 
-	/** Whether to cache bean metadata or rather reobtain it for every access. */
+	/**
+	 * 是否缓存bean的元数据信息
+	 * Whether to cache bean metadata or rather reobtain it for every access.
+	 **/
 	private boolean cacheBeanMetadata = true;
 
 	/** Resolution strategy for expressions in bean definition values. */
@@ -1180,7 +1183,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * @param bw the BeanWrapper to initialize
 	 */
 	protected void initBeanWrapper(BeanWrapper bw) {
+		// 设置类型转化器
 		bw.setConversionService(getConversionService());
+		// 给bean注册自定义的属性编辑器
 		registerCustomEditors(bw);
 	}
 

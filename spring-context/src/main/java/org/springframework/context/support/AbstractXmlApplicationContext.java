@@ -45,6 +45,9 @@ import org.springframework.lang.Nullable;
  */
 public abstract class AbstractXmlApplicationContext extends AbstractRefreshableConfigApplicationContext {
 
+	/**
+	 * 设置xml文件的验证标志，默认是true,标识xml文件是否符合相应规范，如dtd,xsd
+	 */
 	private boolean validating = true;
 
 
@@ -81,6 +84,7 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
 		// Create a new XmlBeanDefinitionReader for the given BeanFactory.
 		//给指定的 beanFactory 创建一个XmlBeanDefinitionReader读取器对象，用于读取解析xml对象
+		// 适配器模式，最终调用的还是beanFactory的方法
 		XmlBeanDefinitionReader beanDefinitionReader = new XmlBeanDefinitionReader(beanFactory);
 
 		// Configure the bean definition reader with this context's
@@ -88,13 +92,14 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 		//给 XmlBeanDefinitionReader 对象重新设置一些上下文环境属性
 		beanDefinitionReader.setEnvironment(this.getEnvironment());
 		beanDefinitionReader.setResourceLoader(this);
+		// 读取本地存储的一些xml约束规范（标签规范存储地址在spring.schemas文件中），标签库，用来解析xml文件
 		beanDefinitionReader.setEntityResolver(new ResourceEntityResolver(this));
 
 		// Allow a subclass to provide custom initialization of the reader,
 		// then proceed with actually loading the bean definitions.
 		//给子类实现提供一些自定义的初始化策略
 		initBeanDefinitionReader(beanDefinitionReader);
-		// 通过XmlBeanDefinitionReader真正的去加载BeanDefinitions
+		// 最终通过XmlBeanDefinitionReader真正的去加载BeanDefinitions，适配器模式
 		loadBeanDefinitions(beanDefinitionReader);
 	}
 

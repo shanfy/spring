@@ -69,17 +69,24 @@ public class OrderComparator implements Comparator<Object> {
 	}
 
 	private int doCompare(@Nullable Object o1, @Nullable Object o2, @Nullable OrderSourceProvider sourceProvider) {
+		// 判断两个比较的对象是否实现了PriorityOrdered接口
 		boolean p1 = (o1 instanceof PriorityOrdered);
 		boolean p2 = (o2 instanceof PriorityOrdered);
+		// 如果二者之一有一个实现了PriorityOrdered接口。则实现此接口的排前面
+		// 如果p1实现了。而p2没实现，则p1排前面
 		if (p1 && !p2) {
 			return -1;
 		}
+		// 如果p2实现了。而p1没实现，则p2排前面
 		else if (p2 && !p1) {
 			return 1;
 		}
-
+		// 二者都没实现PriorityOrdered接口，或者二者都实现PriorityOrdered的逻辑
+		// 拿到o1的order值，如果没有实现Ordered接口，则order默认值为 Integer.MAX_VALUE
 		int i1 = getOrder(o1, sourceProvider);
+		// 拿到o2的order值，如果没有实现Ordered接口，则order默认值为 Integer.MAX_VALUE
 		int i2 = getOrder(o2, sourceProvider);
+		// 通过order值排序，order值越小，优先级越高
 		return Integer.compare(i1, i2);
 	}
 

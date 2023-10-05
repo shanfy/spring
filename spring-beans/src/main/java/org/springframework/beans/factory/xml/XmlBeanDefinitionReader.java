@@ -318,26 +318,27 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 		if (logger.isTraceEnabled()) {
 			logger.trace("Loading XML bean definitions from " + encodedResource);
 		}
-		//获取当前线程正在处理的资源文件集合
+		// 获取当前线程正在处理的资源文件集合
 		Set<EncodedResource> currentResources = this.resourcesCurrentlyBeingLoaded.get();
+		// 没有正在处理的文件，就新建set放入
 		if (currentResources == null) {
 			currentResources = new HashSet<>(4);
 			this.resourcesCurrentlyBeingLoaded.set(currentResources);
 		}
-		//如果当前资源文件已经在解析处理了，则抛出重复解析处理的异常
+		// 如果当前资源文件已经在解析处理了，则抛出重复解析处理的异常
 		if (!currentResources.add(encodedResource)) {
 			throw new BeanDefinitionStoreException(
 					"Detected cyclic loading of " + encodedResource + " - check your import definitions!");
 		}
 		try {
-			//解析xml资源文件读取到流中，并进一步封装为InputStream对象用于后续处理
+			// 解析xml资源文件读取到流中，并进一步封装为InputStream对象用于后续处理
 			InputStream inputStream = encodedResource.getResource().getInputStream();
 			try {
 				InputSource inputSource = new InputSource(inputStream);
 				if (encodedResource.getEncoding() != null) {
 					inputSource.setEncoding(encodedResource.getEncoding());
 				}
-				//do开头的方法，一般用来执行真正的加载逻辑
+				// do开头的方法，一般用来执行真正的加载逻辑
 				return doLoadBeanDefinitions(inputSource, encodedResource.getResource());
 			}
 			finally {
@@ -394,9 +395,9 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 			throws BeanDefinitionStoreException {
 
 		try {
-			//读取xml内容，并将xml内容保存到 Document 对象中
+			// 读取xml内容，并将xml内容保存到 Document 对象中
 			Document doc = doLoadDocument(inputSource, resource);
-			//解析Document 对象，封装成一个个BeanDefinition对象进行注册，返回注册的个数
+			// 解析Document 对象，封装成一个个BeanDefinition对象进行注册，返回注册的个数
 			int count = registerBeanDefinitions(doc, resource);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Loaded " + count + " bean definitions from " + resource);
@@ -451,10 +452,12 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see #detectValidationMode
 	 */
 	protected int getValidationModeForResource(Resource resource) {
+		// 如果手动指定了验证模式，则使用指定的验证默认，默认自动
 		int validationModeToUse = getValidationMode();
 		if (validationModeToUse != VALIDATION_AUTO) {
 			return validationModeToUse;
 		}
+		// 如果没有指定验证模式，则根据xml资源文件，检测应该使用的验证模式
 		int detectedMode = detectValidationMode(resource);
 		if (detectedMode != VALIDATION_AUTO) {
 			return detectedMode;
@@ -515,13 +518,14 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see BeanDefinitionDocumentReader#registerBeanDefinitions
 	 */
 	public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
-		//定义Document对象的读取器
+		// 定义Document对象的读取器， 读取解析出BeanDefinition对象
 		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
-		//获取之前BeanDefinitionRegistry中已经注册过的 BeanDefinition数量，用于后续相减得到此次注册数量
+		// 获取之前BeanDefinitionRegistry中已经注册过的 BeanDefinition数量，用于后续相减得到此次注册数量
 		int countBefore = getRegistry().getBeanDefinitionCount();
-		//注册BeanDefinition对象
+		// 创建ReaderContext对象，注册BeanDefinition对象，ReaderContext中包含当前Reader
+		// 的引用，也就有了当前BeanDefinitionRegistry即DefaultListableBeanFactory的引用
 		documentReader.registerBeanDefinitions(doc, createReaderContext(resource));
-		//返回新注册的BeanDefinition对象的数量
+		// 返回新注册的BeanDefinition对象的数量
 		return getRegistry().getBeanDefinitionCount() - countBefore;
 	}
 
@@ -539,6 +543,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * Create the {@link XmlReaderContext} to pass over to the document reader.
 	 */
 	public XmlReaderContext createReaderContext(Resource resource) {
+		// 获取对应xml标签规范解析器
 		return new XmlReaderContext(resource, this.problemReporter, this.eventListener,
 				this.sourceExtractor, this, getNamespaceHandlerResolver());
 	}
@@ -548,7 +553,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see #createDefaultNamespaceHandlerResolver()
 	 */
 	public NamespaceHandlerResolver getNamespaceHandlerResolver() {
-		//获取资源文件解析器，如 http://www.springframework.org/schema/beans等
+		// 获取资源文件解析器，如 http://www.springframework.org/schema/beans等
 		// 这种在对应项目下的spring.handlers目录下都有对应的解析器，此处就是初始化这些解析器类
 		if (this.namespaceHandlerResolver == null) {
 			this.namespaceHandlerResolver = createDefaultNamespaceHandlerResolver();

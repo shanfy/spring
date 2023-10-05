@@ -93,6 +93,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	@Override
 	public void registerBeanDefinitions(Document doc, XmlReaderContext readerContext) {
 		this.readerContext = readerContext;
+		// 获取父级元素，逐级向下解析节点
 		doRegisterBeanDefinitions(doc.getDocumentElement());
 	}
 
@@ -125,12 +126,14 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		// the new (child) delegate with a reference to the parent for fallback purposes,
 		// then ultimately reset this.delegate back to its original (parent) reference.
 		// this behavior emulates a stack of delegates without actually necessitating one.
+		// 默认为null
 		BeanDefinitionParserDelegate parent = this.delegate;
-		//进行实际解析处理的委托类
+		// 进行xml实际解析处理的委托类
 		this.delegate = createDelegate(getReaderContext(), root, parent);
 
 		if (this.delegate.isDefaultNamespace(root)) {
 			String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
+			// 一般Spring中不会出现profile的指定
 			if (StringUtils.hasText(profileSpec)) {
 				String[] specifiedProfiles = StringUtils.tokenizeToStringArray(
 						profileSpec, BeanDefinitionParserDelegate.MULTI_VALUE_ATTRIBUTE_DELIMITERS);
@@ -145,11 +148,11 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				}
 			}
 		}
-		//钩子方法，供子类实现
+		// 钩子方法，供子类实现
 		preProcessXml(root);
-		//解析注册的逻辑
+		// 解析注册的逻辑
 		parseBeanDefinitions(root, this.delegate);
-		//钩子方法，供子类实现
+		// 钩子方法，供子类实现
 		postProcessXml(root);
 
 		this.delegate = parent;
@@ -157,8 +160,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 
 	protected BeanDefinitionParserDelegate createDelegate(
 			XmlReaderContext readerContext, Element root, @Nullable BeanDefinitionParserDelegate parentDelegate) {
-
+		// 委托类持有readerContext引用
 		BeanDefinitionParserDelegate delegate = new BeanDefinitionParserDelegate(readerContext);
+		// 设置beans标签的默认属性，数是否懒加载等
 		delegate.initDefaults(root, parentDelegate);
 		return delegate;
 	}
@@ -171,18 +175,19 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 */
 	protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {
 		if (delegate.isDefaultNamespace(root)) {
-			//获取所有的标签子元素,循环进行处理
+			// 获取所有的标签子元素,循环进行处理
 			NodeList nl = root.getChildNodes();
 			for (int i = 0; i < nl.getLength(); i++) {
 				Node node = nl.item(i);
 				if (node instanceof Element) {
 					Element ele = (Element) node;
+					// 默认的命名空间只有beans，其它的都属于自定义标签
 					if (delegate.isDefaultNamespace(ele)) {
-						//解析默认标签元素
+						// 解析默认标签元素
 						parseDefaultElement(ele, delegate);
 					}
 					else {
-						//解析自定义标签元素
+						// 解析自定义标签元素
 						delegate.parseCustomElement(ele);
 					}
 				}
@@ -225,6 +230,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		}
 
 		// Resolve system properties: e.g. "${user.dir}"
+		// 解析文件名称中的名称占位符
 		location = getReaderContext().getEnvironment().resolveRequiredPlaceholders(location);
 
 		Set<Resource> actualResources = new LinkedHashSet<>(4);
@@ -314,14 +320,15 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * and registering it with the registry.
 	 */
 	protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {
-		//解析bean标签元素为beanDefinition对象，并将其包装为 BeanDefinitionHolder 对象返回
+		// 解析bean标签元素为beanDefinition对象，并将其包装为 BeanDefinitionHolder 对象返回
+		// (持有BeanDefinition对象，beanName, 还有别名数组)
 		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
 		if (bdHolder != null) {
-			//如果有自定义标签，则处理自定义标签
+			// 如果有自定义属性标签，则处理自定义标签
 			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);
 			try {
 				// Register the final decorated instance.
-				//完成BeanDefinition 的注册
+				// 向ioc容器注册BeanDefinition信息，完成BeanDefinition 的注册
 				BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());
 			}
 			catch (BeanDefinitionStoreException ex) {
@@ -329,6 +336,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 						bdHolder.getBeanName() + "'", ele, ex);
 			}
 			// Send registration event.
+			// 在单个BeanDefinition 完成注册后，发送消息
 			getReaderContext().fireComponentRegistered(new BeanComponentDefinition(bdHolder));
 		}
 	}

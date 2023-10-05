@@ -79,6 +79,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 	/**
 	 * 三级缓存
+	 * 此时对象不完整
 	 * 用于保存BeanName和创建bean的工厂（ObjectFactory）之间的关系
 	 * Cache of singleton factories: bean name to ObjectFactory.
 	 **/
@@ -87,7 +88,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	/**
 	 * 二级缓存
 	 * 保存BeanName和创建bean实例之间的关系，与singletonFactories的不同之处在于，当一个单例bean被放到这里之后，那么当bean还在创建过程中
-	 * 就可以通过getBean方法获取到，可以方便进行循环依赖的检测
+	 * 就可以通过getBean方法获取到，可以方便进行循环依赖的检测，此时对象仍不完整
 	 * Cache of early singleton objects: bean name to bean instance.
 	 **/
 	private final Map<String, Object> earlySingletonObjects = new HashMap<>(16);

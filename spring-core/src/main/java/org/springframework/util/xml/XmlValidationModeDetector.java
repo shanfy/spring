@@ -96,6 +96,7 @@ public class XmlValidationModeDetector {
 			String content;
 			while ((content = reader.readLine()) != null) {
 				content = consumeCommentTokens(content);
+				// 读取的是空行或者注释行，略过
 				if (this.inComment || !StringUtils.hasText(content)) {
 					continue;
 				}
@@ -103,6 +104,7 @@ public class XmlValidationModeDetector {
 					isDtdValidated = true;
 					break;
 				}
+				// 读取到< 标签开始符号
 				if (hasOpeningTag(content)) {
 					// End of meaningful data...
 					break;

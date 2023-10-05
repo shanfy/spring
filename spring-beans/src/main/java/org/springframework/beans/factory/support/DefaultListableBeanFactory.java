@@ -937,9 +937,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			else {
 				// Still in startup registration phase
-				//bean元素的注册，就是以 bean的id作为key,beandefinition对象作为Value存储在map集合中
+				// bean元素的注册，就是以 bean的id作为key,beandefinition对象作为Value存储在map集合中
 				this.beanDefinitionMap.put(beanName, beanDefinition);
-				//同时存储所有的注册了的bean名称
+				// 同时存储所有的注册了的bean名称
 				this.beanDefinitionNames.add(beanName);
 				removeManualSingletonName(beanName);
 			}

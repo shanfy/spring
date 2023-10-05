@@ -80,14 +80,20 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 	@Override
 	@Nullable
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		// 获取context:component-scan标签的 base-package属性值
 		String basePackage = element.getAttribute(BASE_PACKAGE_ATTRIBUTE);
+		// 根据环境变量值解析包名称中可能存在的占位符
 		basePackage = parserContext.getReaderContext().getEnvironment().resolvePlaceholders(basePackage);
+		// 解析base-package的值，可以通过,;\n\t这些符号指定多个
 		String[] basePackages = StringUtils.tokenizeToStringArray(basePackage,
 				ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
 
 		// Actually scan for bean definitions and register them.
+		// 构建和配置ClassPathBeanDefinitionScanner对象
 		ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
+		// 使用scanner对象再对应的base-package中扫描组件，返回这些组件的定义信息
 		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);
+		// 将这些组件注册进容器内
 		registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
 
 		return null;
@@ -144,17 +150,20 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 
 		// Register annotation config processors, if necessary.
 		boolean annotationConfig = true;
+		// 获取component-scan标签的annotation-config属性值，默认为true
 		if (element.hasAttribute(ANNOTATION_CONFIG_ATTRIBUTE)) {
 			annotationConfig = Boolean.valueOf(element.getAttribute(ANNOTATION_CONFIG_ATTRIBUTE));
 		}
 		if (annotationConfig) {
+			// 如果annotation-config属性值为true，在给定的注册表中注册所有用于内部注解解析的bean后置处理器
 			Set<BeanDefinitionHolder> processorDefinitions =
 					AnnotationConfigUtils.registerAnnotationConfigProcessors(readerContext.getRegistry(), source);
 			for (BeanDefinitionHolder processorDefinition : processorDefinitions) {
+				// 将注册的注解后置处器的BeanDefinition添加到compositeDef的nestedComponents属性中
 				compositeDef.addNestedComponent(new BeanComponentDefinition(processorDefinition));
 			}
 		}
-
+		// 触发组件注册事件，默认实现为EmptyReaderEventListener
 		readerContext.fireComponentRegistered(compositeDef);
 	}
 

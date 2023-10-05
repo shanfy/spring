@@ -137,9 +137,9 @@ public class ClassPathXmlApplicationContext extends AbstractXmlApplicationContex
 	public ClassPathXmlApplicationContext(
 			String[] configLocations, boolean refresh, @Nullable ApplicationContext parent)
 			throws BeansException {
-		//初始化：设置父类容器的引用
+		// 初始化：设置父类容器的引用
 		super(parent);
-		//加载配置文件信息到 String[] configLocations;
+		// 加载配置文件信息到 configLocations属性中
 		setConfigLocations(configLocations);
 		//执行spring容器的初始化刷新，refresh方法可在容器启动后主动调用进行刷新
 		if (refresh) {

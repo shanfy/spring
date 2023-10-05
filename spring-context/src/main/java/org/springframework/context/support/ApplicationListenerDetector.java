@@ -30,6 +30,9 @@ import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.util.ObjectUtils;
 
 /**
+ * 此类用来检测Bean是否实现了ApplicationListener接口，两个作用：
+ * 1、实例化完成之后，如果bean是单例，且实现了ApplicationListener接口，则加入到多播器中
+ * 2、bean销毁之前，如果bean是一个ApplicationListener。则从多播器中提前删除
  * {@code BeanPostProcessor} that detects beans which implement the {@code ApplicationListener}
  * interface. This catches beans that can't reliably be detected by {@code getBeanNamesForType}
  * and related operations which only work against top-level beans.

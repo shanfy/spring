@@ -125,24 +125,26 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws BeansException {
-		//判断是否已有 beanFactory
+		// 判断是否已有 beanFactory
 		if (hasBeanFactory()) {
-			//销毁beans
+			// 销毁beans
 			destroyBeans();
-			//关闭beanFactory
+			// 关闭beanFactory
 			closeBeanFactory();
 		}
 		try {
-			//实例化一个DefaultListableBeanFactory对象
+			// 实例化一个DefaultListableBeanFactory对象
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
-			//设置序列化id
+			// 设置序列化id，但是什么时候会用到这个序列化呢？？？？
 			beanFactory.setSerializationId(getId());
-			//自定义bean工厂的一些属性（是否允许相同bean定义进行覆盖，是否允许循环依赖）
+			// 自定义bean工厂的一些属性（是否允许同名称bean定义进行覆盖，是否允许循环依赖）
+			// 默认都是true，想要改变默认需要子类重写此方法
 			customizeBeanFactory(beanFactory);
-			//加载应用中的 BeanDefinitions
+			// 初始化documentReader, 加载和解析XML文件，得到 BeanDefinitions
 			// org.springframework.context.support.AbstractXmlApplicationContext.loadBeanDefinitions(org.springframework.beans.factory.support.DefaultListableBeanFactory)
+			// 首先明确读取的bean定义信息，一定是要存到容器中，所以需要把容器对象向下传递
 			loadBeanDefinitions(beanFactory);
-			//加锁：赋值，关闭,获取等操作互斥，即读写互斥
+			// 加锁：赋值，关闭,获取等操作互斥，即读写互斥
 			synchronized (this.beanFactoryMonitor) {
 				this.beanFactory = beanFactory;
 			}

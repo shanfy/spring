@@ -60,9 +60,12 @@ public abstract class AbstractBeanDefinitionParser implements BeanDefinitionPars
 	@Override
 	@Nullable
 	public final BeanDefinition parse(Element element, ParserContext parserContext) {
+		// org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser.parseInternal
+		// 封装成一个definition是为了将标签的各个属性存储起来，方便后续取值
 		AbstractBeanDefinition definition = parseInternal(element, parserContext);
 		if (definition != null && !parserContext.isNested()) {
 			try {
+				// 生成beanName
 				String id = resolveId(element, definition, parserContext);
 				if (!StringUtils.hasText(id)) {
 					parserContext.getReaderContext().error(
@@ -77,8 +80,10 @@ public abstract class AbstractBeanDefinitionParser implements BeanDefinitionPars
 					}
 				}
 				BeanDefinitionHolder holder = new BeanDefinitionHolder(definition, id, aliases);
+				// 将自定义标签对应的BeanDefinition注册到容器中去
 				registerBeanDefinition(holder, parserContext.getRegistry());
 				if (shouldFireEvents()) {
+					// 通知监听器进行处理
 					BeanComponentDefinition componentDefinition = new BeanComponentDefinition(holder);
 					postProcessComponentDefinition(componentDefinition);
 					parserContext.registerComponent(componentDefinition);
@@ -108,8 +113,10 @@ public abstract class AbstractBeanDefinitionParser implements BeanDefinitionPars
 	 */
 	protected String resolveId(Element element, AbstractBeanDefinition definition, ParserContext parserContext)
 			throws BeanDefinitionStoreException {
-
+		// org.springframework.context.config.AbstractPropertyLoadingBeanDefinitionParser.shouldGenerateId
 		if (shouldGenerateId()) {
+			// org.springframework.beans.factory.xml.XmlReaderContext.generateBeanName
+			// 一般为类全限定名#序号 如org.springframework.context.support.PropertySourcesPlaceholderConfigurer#0
 			return parserContext.getReaderContext().generateBeanName(definition);
 		}
 		else {

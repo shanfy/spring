@@ -128,7 +128,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	@Nullable
 	private ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
 
-	/** Whether to automatically try to resolve circular references between beans. */
+	/**
+	 * 是否允许循环依赖 默认为true
+	 * Whether to automatically try to resolve circular references between beans.
+	 **/
 	private boolean allowCircularReferences = true;
 
 	/**
@@ -167,10 +170,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 
 	/**
+	 * 设置装配时要忽略的接口依赖
+	 * 这意味着Spring将不会自动将实现了这些接口的Bean注入到依赖这些接口的其他Bean中。
+	 * 相反，开发人员可以手动处理这些接口的依赖注入，以便在需要时将对应的实例注入到相应的Bean中
 	 * Create a new AbstractAutowireCapableBeanFactory.
 	 */
 	public AbstractAutowireCapableBeanFactory() {
 		super();
+		// 但是 为啥要先忽略这三个Aware接口依赖呢？？
 		ignoreDependencyInterface(BeanNameAware.class);
 		ignoreDependencyInterface(BeanFactoryAware.class);
 		ignoreDependencyInterface(BeanClassLoaderAware.class);
@@ -181,6 +188,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @param parentBeanFactory parent bean factory, or {@code null} if none
 	 */
 	public AbstractAutowireCapableBeanFactory(@Nullable BeanFactory parentBeanFactory) {
+		// 设置要忽略的接口
 		this();
 		setParentBeanFactory(parentBeanFactory);
 	}
@@ -1698,6 +1706,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				boolean convertible = bw.isWritableProperty(propertyName) &&
 						!PropertyAccessorUtils.isNestedOrIndexedProperty(propertyName);
 				if (convertible) {
+					// 类型转换，先propertyEditory后conversionServicce顺序生效
 					convertedValue = convertForProperty(resolvedValue, propertyName, bw, converter);
 				}
 				// Possibly store converted value in merged bean definition,

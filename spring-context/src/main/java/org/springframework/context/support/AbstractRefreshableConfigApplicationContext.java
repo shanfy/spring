@@ -39,6 +39,9 @@ import org.springframework.util.StringUtils;
 public abstract class AbstractRefreshableConfigApplicationContext extends AbstractRefreshableApplicationContext
 		implements BeanNameAware, InitializingBean {
 
+	/**
+	 * 配置文件的存储路径，默认是个字符串数组
+	 */
 	@Nullable
 	private String[] configLocations;
 
@@ -74,11 +77,13 @@ public abstract class AbstractRefreshableConfigApplicationContext extends Abstra
 	 * <p>If not set, the implementation may use a default as appropriate.
 	 */
 	public void setConfigLocations(@Nullable String... locations) {
-		//因为配置文件中可以传入一些特别的占位符，都在这里一起处理，得到一个配置文件位置字符串数组
+		//因为配置文件中或者文件名（一般不这么干，但是有这种方式）可以传入一些特别的占位符(如${username}这种)
+		// ，文件名的情况就是在这里处理，得到一个配置文件位置字符串数组
 		if (locations != null) {
 			Assert.noNullElements(locations, "Config locations must not be null");
 			this.configLocations = new String[locations.length];
 			for (int i = 0; i < locations.length; i++) {
+				// 逐个解析给定路径的配置文件
 				this.configLocations[i] = resolvePath(locations[i]).trim();
 			}
 		}
@@ -123,6 +128,7 @@ public abstract class AbstractRefreshableConfigApplicationContext extends Abstra
 	 * @see org.springframework.core.env.Environment#resolveRequiredPlaceholders(String)
 	 */
 	protected String resolvePath(String path) {
+		// 程序刚执行到这里，还没有解析任何配置文件中的属性，此时涉及的变量替换值，一定是从系统变量中寻找
 		return getEnvironment().resolveRequiredPlaceholders(path);
 	}
 

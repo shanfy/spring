@@ -103,7 +103,7 @@ public abstract class BeanDefinitionReaderUtils {
 	public static String generateBeanName(
 			BeanDefinition definition, BeanDefinitionRegistry registry, boolean isInnerBean)
 			throws BeanDefinitionStoreException {
-
+		// 默认类的全限定名
 		String generatedBeanName = definition.getBeanClassName();
 		if (generatedBeanName == null) {
 			if (definition.getParentName() != null) {
@@ -144,6 +144,7 @@ public abstract class BeanDefinitionReaderUtils {
 		int counter = -1;
 
 		// Increase counter until the id is unique.
+		// 序号递增保证同类实例名称唯一
 		while (counter == -1 || registry.containsBeanDefinition(id)) {
 			counter++;
 			id = beanName + GENERATED_BEAN_NAME_SEPARATOR + counter;
@@ -156,6 +157,7 @@ public abstract class BeanDefinitionReaderUtils {
 	 * @param definitionHolder the bean definition including name and aliases
 	 * @param registry the bean factory to register with
 	 * @throws BeanDefinitionStoreException if registration failed
+	 * 像容器中的 beanDefinitionMap 、 BeanDefinitionMap还有aliasMap 中注册Bean的信息
 	 */
 	public static void registerBeanDefinition(
 			BeanDefinitionHolder definitionHolder, BeanDefinitionRegistry registry)

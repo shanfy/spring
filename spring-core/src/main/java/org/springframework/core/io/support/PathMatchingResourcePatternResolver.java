@@ -203,6 +203,10 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 
 	private final ResourceLoader resourceLoader;
 
+	/**
+	 * 创建ant风格的路径匹配器
+	 * 现在使用的比较少，以前像是struts中使用的较多
+	 */
 	private PathMatcher pathMatcher = new AntPathMatcher();
 
 
@@ -279,6 +283,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 		Assert.notNull(locationPattern, "Location pattern must not be null");
 		if (locationPattern.startsWith(CLASSPATH_ALL_URL_PREFIX)) {
 			// a class path resource (multiple resources for same name possible)
+			// ant风格通配符匹配
 			if (getPathMatcher().isPattern(locationPattern.substring(CLASSPATH_ALL_URL_PREFIX.length()))) {
 				// a class path resource pattern
 				return findPathMatchingResources(locationPattern);

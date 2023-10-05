@@ -126,7 +126,7 @@ public class PropertyPlaceholderHelper {
 
 	protected String parseStringValue(
 			String value, PlaceholderResolver placeholderResolver, @Nullable Set<String> visitedPlaceholders) {
-
+		// 获取${ 位置，判断是否存在占位符
 		int startIndex = value.indexOf(this.placeholderPrefix);
 		if (startIndex == -1) {
 			return value;
@@ -134,6 +134,7 @@ public class PropertyPlaceholderHelper {
 
 		StringBuilder result = new StringBuilder(value);
 		while (startIndex != -1) {
+			// 获取对应的} 结尾符位置
 			int endIndex = findPlaceholderEndIndex(result, startIndex);
 			if (endIndex != -1) {
 				String placeholder = result.substring(startIndex + this.placeholderPrefix.length(), endIndex);
@@ -145,10 +146,15 @@ public class PropertyPlaceholderHelper {
 					throw new IllegalArgumentException(
 							"Circular placeholder reference '" + originalPlaceholder + "' in property definitions");
 				}
+				// 递归处理占位符 ${， 挨个获取占位符包含的属性名称
 				// Recursive invocation, parsing placeholders contained in the placeholder key.
 				placeholder = parseStringValue(placeholder, placeholderResolver, visitedPlaceholders);
 				// Now obtain the value for the fully resolved key...
+				// 从上下文环境属性中，解析出属性对应的具体值
+				// 传递进来的是个函数 org.springframework.core.env.AbstractPropertyResolver.doResolvePlaceholders
+				// 最终调用 org.springframework.core.env.PropertySourcesPropertyResolver.getPropertyAsRawString
 				String propVal = placeholderResolver.resolvePlaceholder(placeholder);
+				// 替换对应的属性值
 				if (propVal == null && this.valueSeparator != null) {
 					int separatorIndex = placeholder.indexOf(this.valueSeparator);
 					if (separatorIndex != -1) {
