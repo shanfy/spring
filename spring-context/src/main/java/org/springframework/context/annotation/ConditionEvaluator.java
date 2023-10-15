@@ -78,11 +78,11 @@ class ConditionEvaluator {
 	 * @return if the item should be skipped
 	 */
 	public boolean shouldSkip(@Nullable AnnotatedTypeMetadata metadata, @Nullable ConfigurationPhase phase) {
-		//  metadata为空或者配置类中不存在 @Confitional 标签
+		//  metadata为空或者配置类中不存在 @Conditional 标签
 		if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
 			return false;
 		}
-		// 采用递归的方式进行判断，第一次执行的时候phase为空，向下执行
+		// 采用递归的方式进行判断，如果phase为空，向下执行
 		if (phase == null) {
 			// 下面的逻辑判断中，需要进入ConfigurationClassUtils.isConfigurationCandidate方法，主要的逻辑如下:
 			//  1、metadata是AnnotationMetadata类的一个实例
@@ -99,9 +99,10 @@ class ConditionEvaluator {
 		}
 
 		List<Condition> conditions = new ArrayList<>();
+		// 获取元数据中所有的condition
 		for (String[] conditionClasses : getConditionClasses(metadata)) {
 			for (String conditionClass : conditionClasses) {
-				// 获取Confitional注解后的value数组
+				// 获取Conditional注解后的value数组
 				Condition condition = getCondition(conditionClass, this.context.getClassLoader());
 				conditions.add(condition);
 			}

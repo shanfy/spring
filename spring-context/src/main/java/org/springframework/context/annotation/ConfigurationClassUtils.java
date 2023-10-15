@@ -109,7 +109,9 @@ abstract class ConfigurationClassUtils {
 		}
 		else {
 			try {
+				// 获取className的metadataReader实例
 				MetadataReader metadataReader = metadataReaderFactory.getMetadataReader(className);
+				// 获取底层类的完整注释元数据，包括带注解方法的元数据
 				metadata = metadataReader.getAnnotationMetadata();
 			}
 			catch (IOException ex) {

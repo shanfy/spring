@@ -295,13 +295,13 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 
 		// Return immediately if no @Configuration classes were found
-		// 如果没有发现@Configuration注解，则方法直接返回
+		// 如果没有发现被注解修饰的类，则方法直接返回
 		if (configCandidates.isEmpty()) {
 			return;
 		}
 
 		// Sort by previously determined @Order value, if applicable
-		// 如果同时添加了@Order注解，进行排序操作
+		// 根据上面添加的order值，进行排序操作
 		configCandidates.sort((bd1, bd2) -> {
 			int i1 = ConfigurationClassUtils.getOrder(bd1.getBeanDefinition());
 			int i2 = ConfigurationClassUtils.getOrder(bd2.getBeanDefinition());
@@ -345,7 +345,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		do {
 			/**
 			 * 解析配置类，在此处会解析配置类上的注解(ComponentScan扫的类，@Import注册的类，@Bean 方法定义的类)
-			 * 注营，这一步只会将添加@Configuration的注解以及通过ComponentScan注解扫描的类才会加入BeanDefinitionMap中
+			 * 注意，这一步只会将添加@Configuration的注解的类以及通过ComponentScan注解扫描的类加入BeanDefinitionMap中
 			 * 通过其他注解(@Import,@Bean)的方式parse()方法这一步不会将其解析BeanDefinition成BeanDefinitionMap中
 			 * 真正实现的方式是 this.reader.loadBeanDefinitions()方法中实现
 			 */
