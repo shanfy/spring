@@ -220,7 +220,8 @@ class ConfigurationClassParser {
 
 
 	protected void processConfigurationClass(ConfigurationClass configClass) throws IOException {
-		// conditionEvaluator（条件计算器） 判断是否跳过解析，就是对各种condition条件的判断
+		// conditionEvaluator（条件计算器）
+		// 判断是否跳过解析，就是对各种condition条件的判断，条件成立就跳过，不成立，就向下 执行
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
 		}
