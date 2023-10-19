@@ -72,16 +72,19 @@ class ComponentScanAnnotationParser {
 		this.registry = registry;
 	}
 
-
+	/**
+	 * 解析componentScan注解中的属性值
+	 */
 	public Set<BeanDefinitionHolder> parse(AnnotationAttributes componentScan, final String declaringClass) {
+		// 创建对应的扫描类
 		ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.registry,
 				componentScan.getBoolean("useDefaultFilters"), this.environment, this.resourceLoader);
-
+		// 获取componentScan的参数，并进行参数的设置工作
 		Class<? extends BeanNameGenerator> generatorClass = componentScan.getClass("nameGenerator");
 		boolean useInheritedGenerator = (BeanNameGenerator.class == generatorClass);
 		scanner.setBeanNameGenerator(useInheritedGenerator ? this.beanNameGenerator :
 				BeanUtils.instantiateClass(generatorClass));
-
+		// 获取 scopedProxy 属性
 		ScopedProxyMode scopedProxyMode = componentScan.getEnum("scopedProxy");
 		if (scopedProxyMode != ScopedProxyMode.DEFAULT) {
 			scanner.setScopedProxyMode(scopedProxyMode);
@@ -129,6 +132,7 @@ class ComponentScanAnnotationParser {
 				return declaringClass.equals(className);
 			}
 		});
+		// 最终执行扫描的扫描器是 ClassPathBeanDefinitionScanner 类对象
 		return scanner.doScan(StringUtils.toStringArray(basePackages));
 	}
 

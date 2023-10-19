@@ -272,7 +272,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
 		// 当前registry就是DefaultListableBeanFactory，获取所有已经注册的BeanDefinition的beanName
 		String[] candidateNames = registry.getBeanDefinitionNames();
-		// 遍历所有要处理的beanDefinition的名称，筛选对应被注解修饰的beanDefinition
+		// 遍历所有要处理的beanDefinition的名称，筛选对应被注解修饰的beanDefinition，即配置文件component-scan标签指定路径下扫描到的带指定注解的类
 		for (String beanName : candidateNames) {
 			// 获取指定名称的BeanDefinition对象
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
@@ -344,10 +344,11 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
 			/**
-			 * 解析配置类，在此处会解析配置类上的注解(ComponentScan扫的类，@Import注册的类，@Bean 方法定义的类)
-			 * 注意，这一步只会将添加@Configuration的注解的类以及通过ComponentScan注解扫描的类加入BeanDefinitionMap中
+			 * 解析配置类，在此处会解析配置类上的注解(ComponentScan扫描的类，@Import引入的类，@Bean方法定义的类)
+			 * 注意，这一步只会将添加了@Configuration的注解的类以及通过ComponentScan注解扫描的类加入BeanDefinitionMap中
 			 * 通过其他注解(@Import,@Bean)的方式parse()方法这一步不会将其解析BeanDefinition成BeanDefinitionMap中
-			 * 真正实现的方式是 this.reader.loadBeanDefinitions()方法中实现
+			 * 真正实现的方式是 this.reader.loadBeanDefinitions()方法中实现，如调用
+			 * ImportBeanDefinitionRegistrar#registerBeanDefinitions(AnnotationMetadata, BeanDefinitionRegistry)注册
 			 */
 			parser.parse(candidates);
 			parser.validate();
