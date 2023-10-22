@@ -161,7 +161,7 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		this.registry = registry;
-
+		// 放入默认的过滤器
 		if (useDefaultFilters) {
 			registerDefaultFilters();
 		}
@@ -273,7 +273,7 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<>();
 		// 遍历所有指定的包路径
 		for (String basePackage : basePackages) {
-			// 扫描basePackage 将符合要求的bean定义找出来, 具体都扫描哪些注解定义的bean
+			// 扫描basePackage 将符合要求的bean定义找出来, 具体都扫描哪些注解定义的bean，怎么扫描的没看懂？？todo
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
 			for (BeanDefinition candidate : candidates) {
 				// 解析@Scope注解，包括scopeName和proxyMode

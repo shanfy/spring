@@ -226,7 +226,7 @@ class ConfigurationClassParser {
 			return;
 		}
 		// 第一次进入的时候，configurationClass的size为0，existingClass肯定为nulL，在此处处理configuration重复import
-		// 如果同一个配置类被处理两次，且两次都属于被import的则合并导入类，返回，如果配置类不是被导入的，则移除旧的使用新的配置类
+		// 如果同一个配置类被处理两次，且两次都属于被import的则合并导入类并返回，如果配置类不是被导入的，则移除旧的使用新的配置类
 		ConfigurationClass existingClass = this.configurationClasses.get(configClass);
 		if (existingClass != null) {
 			if (configClass.isImported()) {
@@ -279,7 +279,8 @@ class ConfigurationClassParser {
 		}
 
 		// Process any @PropertySource annotations
-		// 如果配置类上加了@PropertySource注解，就解析加载properties文件，并将属性添加到对应beandefinition中的propertyValues属性中? 怎么做到的
+		// 如果配置类上加了@PropertySource注解，就解析加载properties文件，并将属性添加到对应env中的propertyValues属性中 和systemproperties还有systemenv那两个属性集并存
+		// 此时还没有给属性赋值
 		for (AnnotationAttributes propertySource : AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), PropertySources.class,
 				org.springframework.context.annotation.PropertySource.class)) {
@@ -304,6 +305,7 @@ class ConfigurationClassParser {
 				// 解析@ComponentScan和@ComponentScans配置的扫描的包所包含的类
 				// 比如 basePackages = com.mashibing，那么在这一步会扫描出这个包及子包下的class，然后将其解析成BeanDefinition
 				// (BeanDefinition可以理解为等价于BeanDefinitionHolder)
+				// 注意，如果之前已经放入容器的bean，此时不会重复处理到
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
@@ -1039,7 +1041,7 @@ class ConfigurationClassParser {
 					sourceToProcess = metadataReaderFactory.getMetadataReader(sourceClass.getName());
 				}
 			}
-
+			// 这个分支怎么进入的？
 			// ASM-based resolution - safe for non-resolvable classes as well
 			MetadataReader sourceReader = (MetadataReader) sourceToProcess;
 			String[] memberClassNames = sourceReader.getClassMetadata().getMemberClassNames();
