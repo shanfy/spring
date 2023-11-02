@@ -316,7 +316,7 @@ class ConfigurationClassParser {
 					if (bdCand == null) {
 						bdCand = holder.getBeanDefinition();
 					}
-					// 判断是否是一个配置类
+					// 判断是否是一个配置类, 如果是，递归进行解析
 					if (ConfigurationClassUtils.checkConfigurationClassCandidate(bdCand, this.metadataReaderFactory)) {
 						parse(bdCand.getBeanClassName(), holder.getBeanName());
 					}
@@ -331,7 +331,7 @@ class ConfigurationClassParser {
 		processImports(configClass, sourceClass, getImports(sourceClass), true);
 
 		// Process any @ImportResource annotations
-		// 处理@ImportResource注解， 引入Spring的配置文件
+		// 处理@ImportResource注解， 引入Spring的配置文件。很少使用
 		AnnotationAttributes importResource =
 				AnnotationConfigUtils.attributesFor(sourceClass.getMetadata(), ImportResource.class);
 		if (importResource != null) {
@@ -618,7 +618,8 @@ class ConfigurationClassParser {
 						ImportSelector selector = BeanUtils.instantiateClass(candidateClass, ImportSelector.class);
 						ParserStrategyUtils.invokeAwareMethods(
 								selector, this.environment, this.resourceLoader, this.registry);
-						// 判断是否是DeferredImportSelector接口，延迟处理，在所有的配置类都加载完毕后加载
+						// 判断是否是DeferredImportSelector接口，延迟处理，在所有的配置类都加载完毕后加载,调用位置在
+						// ConfigurationClassParser.parse(java.util.Set<org.springframework.beans.factory.config.BeanDefinitionHolder>)最后一行
 						if (selector instanceof DeferredImportSelector) {
 							this.deferredImportSelectorHandler.handle(configClass, (DeferredImportSelector) selector);
 						}
@@ -649,11 +650,12 @@ class ConfigurationClassParser {
 					else {
 						// Candidate class not an ImportSelector or ImportBeanDefinitionRegistrar ->
 						// process it as an @Configuration class
+						// 所以这些普通类的信息是什么时候放到容器中的？？？ 发现还是通过下面的方法 processConfigurationClass
 						this.importStack.registerImport(
 								currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
 						/**
-						 * 如果Import的类型是普通类，则将其中有@Configuration的类一样处理
-						 * 将candidate构造为ConfigurationClass，标注为importedBy，意味着它是通过被@Import进来的，加入到对应ConfigClass的importedBy集合中candidate.asConfigClass
+						 * 如果Import的类型是普通类，
+						 * 将candidate构造为ConfigurationClass，标注为importedBy，意味着它是通过被@Import进来的，加入到对应ConfigClass的importedBy集合中
 						 * 后面处理会用到这个判断将这个普通类注册进DefaultListableBeanFactory
 						 **/
 						processConfigurationClass(candidate.asConfigClass(configClass));
@@ -762,6 +764,7 @@ class ConfigurationClassParser {
 		private final MultiValueMap<String, AnnotationMetadata> imports = new LinkedMultiValueMap<>();
 
 		public void registerImport(AnnotationMetadata importingClass, String importedClass) {
+			// 被导入的类名称-》导入类的注解信息
 			this.imports.add(importedClass, importingClass);
 		}
 

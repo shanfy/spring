@@ -156,15 +156,35 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	private boolean autowireCandidate = true;
 
+	/**
+	 * 自动装配时当出现多个bean候选者时，将作为首选者
+	 */
 	private boolean primary = false;
 
+	/**
+	 * 用于记录qualifier
+	 */
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
 
 	@Nullable
 	private Supplier<?> instanceSupplier;
 
+	/**
+	 * 允许访问非公开的构造器和方法
+	 */
 	private boolean nonPublicAccessAllowed = true;
 
+	/**
+	 * 是否以一种宽松的模式解析构造函数，默认是true
+	 * *如果是false，则在如下情况
+	 * * interface ITest{}
+	 * * class ITestImpl implements ITest{};
+	 * * class Main{
+	 *  	Main(ITest){}
+	 *	 	Main(ITestImpl i){}
+	 * }
+	 * *抛出异常，因为spring无法准确定位哪个构造函数
+	 */
 	private boolean lenientConstructorResolution = true;
 
 	@Nullable
@@ -190,12 +210,23 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private String destroyMethodName;
 
+
 	private boolean enforceInitMethod = true;
 
+	/**
+	 * 是否执行destory-method方法
+	 */
 	private boolean enforceDestroyMethod = true;
 
+	/**
+	 * 是否是用户定义的而不是应用程序本身定义的，创建AOP的时候为true
+	 */
 	private boolean synthetic = false;
 
+	/**
+	 *  定义这个bean的应用，application:用户，infrastructure:完全内部使用，与用户无关
+	 * * support:某些复杂配置的一部分
+	 */
 	private int role = BeanDefinition.ROLE_APPLICATION;
 
 	@Nullable
