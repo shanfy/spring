@@ -16,37 +16,19 @@
 
 package org.springframework.core.convert.support;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
 import org.springframework.core.DecoratingProxy;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.convert.ConversionException;
-import org.springframework.core.convert.ConversionFailedException;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.ConverterNotFoundException;
-import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.core.convert.converter.ConditionalConverter;
-import org.springframework.core.convert.converter.ConditionalGenericConverter;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.core.convert.converter.ConverterFactory;
-import org.springframework.core.convert.converter.ConverterRegistry;
-import org.springframework.core.convert.converter.GenericConverter;
+import org.springframework.core.convert.*;
+import org.springframework.core.convert.converter.*;
 import org.springframework.core.convert.converter.GenericConverter.ConvertiblePair;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * Base {@link ConversionService} implementation suitable for use in most environments.
@@ -79,18 +61,24 @@ public class GenericConversionService implements ConfigurableConversionService {
 	private final Map<ConverterCacheKey, GenericConverter> converterCache = new ConcurrentReferenceHashMap<>(64);
 
 
-	// ConverterRegistry implementation
-
+	/**
+	 * ConverterRegistry implementation
+	 * 添加converter
+ 	 */
 	@Override
 	public void addConverter(Converter<?, ?> converter) {
+		// 获取对应的source、target类型
 		ResolvableType[] typeInfo = getRequiredTypeInfo(converter.getClass(), Converter.class);
+		// 如果对应类型为空并且converter是代理，再次尝试获取
 		if (typeInfo == null && converter instanceof DecoratingProxy) {
 			typeInfo = getRequiredTypeInfo(((DecoratingProxy) converter).getDecoratedClass(), Converter.class);
 		}
+		// 如果typeInfo是null，抛出异常
 		if (typeInfo == null) {
 			throw new IllegalArgumentException("Unable to determine source type <S> and target type <T> for your " +
 					"Converter [" + converter.getClass().getName() + "]; does the class parameterize those types?");
 		}
+		// 添加到内部Converters里面进行管理
 		addConverter(new ConverterAdapter(converter, typeInfo[0], typeInfo[1]));
 	}
 
@@ -102,7 +90,9 @@ public class GenericConversionService implements ConfigurableConversionService {
 
 	@Override
 	public void addConverter(GenericConverter converter) {
+		// 加到GenericConversionService自定义类Converters里面
 		this.converters.add(converter);
+		// 将缓存清空
 		invalidateCache();
 	}
 

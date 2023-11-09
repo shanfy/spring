@@ -16,8 +16,6 @@
 
 package org.springframework.context.support;
 
-import java.util.Set;
-
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
@@ -25,6 +23,8 @@ import org.springframework.core.convert.support.ConversionServiceFactory;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.lang.Nullable;
+
+import java.util.Set;
 
 /**
  * A factory providing convenient access to a ConversionService configured with
@@ -50,9 +50,11 @@ import org.springframework.lang.Nullable;
  */
 public class ConversionServiceFactoryBean implements FactoryBean<ConversionService>, InitializingBean {
 
+	// 保存自定义的转换器
 	@Nullable
 	private Set<?> converters;
 
+	// 如果没有自定义ConversionService, 那么默认使用的是DefaultConversionService
 	@Nullable
 	private GenericConversionService conversionService;
 
@@ -67,6 +69,7 @@ public class ConversionServiceFactoryBean implements FactoryBean<ConversionServi
 		this.converters = converters;
 	}
 
+	// Bean初始化结束之后，注册自定义的转换器进去
 	@Override
 	public void afterPropertiesSet() {
 		this.conversionService = createConversionService();

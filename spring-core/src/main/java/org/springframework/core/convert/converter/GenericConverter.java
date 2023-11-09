@@ -16,13 +16,14 @@
 
 package org.springframework.core.convert.converter;
 
-import java.util.Set;
-
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
+import java.util.Set;
+
 /**
+ * 用于两种或者更多种类型之间转化的通用转换器接口, 可将1种类型 转为多种类型？
  * Generic converter interface for converting between two or more types.
  *
  * <p>This is the most flexible of the Converter SPI interfaces, but also the most complex.
@@ -57,6 +58,7 @@ public interface GenericConverter {
 	Set<ConvertiblePair> getConvertibleTypes();
 
 	/**
+	 * 转换源对象到目标类型的描述
 	 * Convert the source object to the targetType described by the {@code TypeDescriptor}.
 	 * @param source the source object to convert (may be {@code null})
 	 * @param sourceType the type descriptor of the field we are converting from
@@ -68,6 +70,7 @@ public interface GenericConverter {
 
 
 	/**
+	 * 新建一个源到目标的组合
 	 * Holder for a source-to-target class pair.
 	 */
 	final class ConvertiblePair {
