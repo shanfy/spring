@@ -1221,6 +1221,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 	@Override
 	public Object getBean(String name) throws BeansException {
+		// 判断当前容器是否已启动
 		assertBeanFactoryActive();
 		return getBeanFactory().getBean(name);
 	}
