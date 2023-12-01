@@ -73,6 +73,7 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 	 */
 	@Override
 	protected Object instantiateWithMethodInjection(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner) {
+		// 构造器为空，最终是直接调用无参构造方法创建实例，没有生成代理对象
 		return instantiateWithMethodInjection(bd, beanName, owner, null);
 	}
 
