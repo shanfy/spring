@@ -245,7 +245,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 					}
 				}
 			});
-			// 将本次循环中获取到的对应方法集合保存到总集合中
+			// 将本次循环中获取到的对应方法集合保存到总集合中，初始化方法，父类先于子类
 			initMethods.addAll(0, currInitMethods);
 			// 销毁方法父类晚于子类
 			destroyMethods.addAll(currDestroyMethods);
@@ -298,7 +298,8 @@ public class InitDestroyAnnotationBeanPostProcessor
 		}
 
 		/**
-		 * 修改beanDefinition，  将初始化和销毁的回调方法注册到 beanDefinition 中，并且标记已经检查过的方法，放入checkedInitMethods集合和checkedDestroyMethods中
+		 * 修改beanDefinition，  将初始化和销毁的回调方法注册到 beanDefinition 中，并且标记已经检查过的方法，
+		 * 放入checkedInitMethods集合和checkedDestroyMethods中
 		 * 之所以要修改beanDefinition ,是因为只有它的信息在整个工厂中是一直存在 永恒不变
 		 * @param beanDefinition
 		 */
@@ -307,7 +308,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 			for (LifecycleElement element : this.initMethods) {
 				String methodIdentifier = element.getIdentifier();
 				if (!beanDefinition.isExternallyManagedInitMethod(methodIdentifier)) {
-					// 注册初始化调用方法
+					// 注册初始化调用方法，重点就是这个方法调用
 					beanDefinition.registerExternallyManagedInitMethod(methodIdentifier);
 					checkedInitMethods.add(element);
 					if (logger.isTraceEnabled()) {
