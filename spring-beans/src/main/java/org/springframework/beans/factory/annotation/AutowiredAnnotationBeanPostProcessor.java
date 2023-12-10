@@ -625,18 +625,26 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				TypeConverter typeConverter = beanFactory.getTypeConverter();
 				try {
 					// 获取依赖的value值的工作最终还是委托给beanFactory.resolveDependency()去完成的
-					// 这个接口方法由AutowireCapableBeanFactorv提供，它提供了从bean 工厂里获取依赖值的能力
+					// 这个接口方法由AutowireCapableBeanFactorv提供，它提供了从bean工厂里创建并获取依赖值的能力
 					value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);
 				}
 				catch (BeansException ex) {
 					throw new UnsatisfiedDependencyException(null, beanName, new InjectionPoint(field), ex);
 				}
+				// 把缓存值缓存起来
 				synchronized (this) {
+					// 如果没有缓存，则开始缓存
 					if (!this.cached) {
+						// 可以看到value! =nulL并且required=true才会进行缓存的处理
 						if (value != null || this.required) {
+							// 这里先缓存一下 desc，如果下面 autowiredBeanNames.size() >
+							// 1。则在上面从缓存中获取的时候 todo
 							this.cachedFieldValue = desc;
+							// 注册依赖bean
 							registerDependentBeans(beanName, autowiredBeanNames);
+							// autowiredBeanNames里可能会有别名的名称，所以size可能大于1
 							if (autowiredBeanNames.size() == 1) {
+								// beanFactory.isTypeMatch挺重要的,因为@Autowired是按照类型注入的
 								String autowiredBeanName = autowiredBeanNames.iterator().next();
 								if (beanFactory.containsBean(autowiredBeanName) &&
 										beanFactory.isTypeMatch(autowiredBeanName, field.getType())) {
@@ -653,6 +661,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				}
 			}
 			if (value != null) {
+				// 通过反射，给属性赋值
 				ReflectionUtils.makeAccessible(field);
 				field.set(bean, value);
 			}
@@ -679,16 +688,20 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 		@Override
 		protected void inject(Object bean, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
+			// 检测是否可以跳过
 			if (checkPropertySkipping(pvs)) {
 				return;
 			}
+			// 获取方法
 			Method method = (Method) this.member;
 			Object[] arguments;
+			// 如果缓存中有，从缓存中获取
 			if (this.cached) {
 				// Shortcut for avoiding synchronization...
 				arguments = resolveCachedArguments(beanName);
 			}
 			else {
+				// 获取方法的参数，从Spring容器中获取（缓存中没有则尝试创建）
 				Class<?>[] paramTypes = method.getParameterTypes();
 				arguments = new Object[paramTypes.length];
 				DependencyDescriptor[] descriptors = new DependencyDescriptor[paramTypes.length];
