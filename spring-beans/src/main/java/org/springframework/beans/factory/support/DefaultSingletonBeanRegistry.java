@@ -147,6 +147,8 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	}
 
 	/**
+	 * 此方法在创建实例后调用，将ObjectFactory保存到singletonFactories中，通过getObject调用
+	 * 核心就是往三级缓存中添加一个bean名称对应的lambda表达式
 	 * Add the given singleton factory for building the specified singleton
 	 * if necessary.
 	 * <p>To be called for eager registration of singletons, e.g. to be able to
@@ -158,9 +160,12 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		Assert.notNull(singletonFactory, "Singleton factory must not be null");
 		synchronized (this.singletonObjects) {
 			if (!this.singletonObjects.containsKey(beanName)) {
+				// 放到单例工厂里
 				this.singletonFactories.put(beanName, singletonFactory);
 				// 这种情况是什么时候会发生呢
+				// 删除早期单例
 				this.earlySingletonObjects.remove(beanName);
+				// 添加到已注册
 				this.registeredSingletons.add(beanName);
 			}
 		}

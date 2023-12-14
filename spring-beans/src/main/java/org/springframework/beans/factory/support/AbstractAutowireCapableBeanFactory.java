@@ -547,6 +547,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			if (!mbd.postProcessed) {
 				try {
 					// MergedBeanDefinitionPostProcessor后置处理器修改合并bean的定义,(@PostConstruct的处理)
+					// 因为xml和注解可以混用，这里就是正式填充属性前完成类中注解的解析和预处理，方便后续的属性注入
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
 				}
 				catch (Throwable ex) {
@@ -559,7 +560,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Eagerly cache singletons to be able to resolve circular references
 		// even when triggered by lifecycle interfaces like BeanFactoryAware.
-		// 若当前bean是单例，且spring容器允许循环依赖，且当前bean正在创建，则允许该不完整实例提前曝光
+		// 若当前bean是单例，且spring容器允许循环依赖，且当前bean正在创建，则允许被依赖的对象  不完整实例提前曝光
 		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
 				isSingletonCurrentlyInCreation(beanName));
 		if (earlySingletonExposure) {
