@@ -27,8 +27,8 @@
 	<bean id="myBeanPostProcessor" class="com.lagou.edu.MyBeanPostProcessor"/>-->
 
 
-	<!--<bean id="lagouBean" class="com.lagou.edu.LagouBean">
-	</bean>-->
+	<bean id="lagouBean" class="com.lagou.edu.LagouBean" autowire="byType">
+	</bean>
 
 
 	<!--aop配置-->

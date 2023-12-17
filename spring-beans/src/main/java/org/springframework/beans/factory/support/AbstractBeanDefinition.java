@@ -67,18 +67,21 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	public static final int AUTOWIRE_NO = AutowireCapableBeanFactory.AUTOWIRE_NO;
 
 	/**
+	 * 按照名称装配
 	 * Constant that indicates autowiring bean properties by name.
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_BY_NAME = AutowireCapableBeanFactory.AUTOWIRE_BY_NAME;
 
 	/**
+	 * 按照类型装配
 	 * Constant that indicates autowiring bean properties by type.
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_BY_TYPE = AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE;
 
 	/**
+	 * 按照构造器装配
 	 * Constant that indicates autowiring a constructor.
 	 * @see #setAutowireMode
 	 */
@@ -593,6 +596,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 * @see #AUTOWIRE_BY_TYPE
 	 */
 	public int getResolvedAutowireMode() {
+		// 默认 自动推测合适的依赖注入模式
 		if (this.autowireMode == AUTOWIRE_AUTODETECT) {
 			// Work out whether to apply setter autowiring or constructor autowiring.
 			// If it has a no-arg constructor it's deemed to be setter autowiring,
@@ -600,9 +604,11 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 			Constructor<?>[] constructors = getBeanClass().getConstructors();
 			for (Constructor<?> constructor : constructors) {
 				if (constructor.getParameterCount() == 0) {
+					// 有无参构造方法，默认按照类型
 					return AUTOWIRE_BY_TYPE;
 				}
 			}
+			// 没有无参构造方法，默认按照构造器
 			return AUTOWIRE_CONSTRUCTOR;
 		}
 		else {

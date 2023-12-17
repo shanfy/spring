@@ -8,20 +8,25 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 /**
  * @Author 应癫
  * @create 2019/12/3 11:46
  */
-@Component("LagouBean")
+// @Component("LagouBean")
 public class LagouBean implements BeanNameAware, InitializingBean,
 		ApplicationContextAware {
 
-	@Autowired
-	private ItBean itBean;
+/*	@Autowired
+	private ItBean itBean;*/
 
+	@Autowired
+	private Map<String, Object> maps;
+/*
 	public void setItBean(ItBean itBean) {
 		this.itBean = itBean;
-	}
+	}*/
 
 	/**
 	 * 构造函数
@@ -54,5 +59,9 @@ public class LagouBean implements BeanNameAware, InitializingBean,
 	}
 	public void initMethod(){
 		System.out.println("initMethod......");
+	}
+
+	public void setMaps(Map<String, Object> maps) {
+		this.maps = maps;
 	}
 }

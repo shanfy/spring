@@ -10,12 +10,14 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ItBean implements BeanNameAware {
+	/*
 	@Autowired
 	private LagouBean lagouBean;
 
 	public void setLagouBean(LagouBean lagouBean) {
 		this.lagouBean = lagouBean;
 	}
+	*/
 
 	/**
 	 * 构造函数

@@ -561,6 +561,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Eagerly cache singletons to be able to resolve circular references
 		// even when triggered by lifecycle interfaces like BeanFactoryAware.
 		// 若当前bean是单例，且spring容器允许循环依赖，且当前bean正在创建，则允许被依赖的对象  不完整实例提前曝光
+		// 一般都会满足条件，不管是否需要这个代理对象，有需要就调用，没需要就不进行调用
 		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
 				isSingletonCurrentlyInCreation(beanName));
 		if (earlySingletonExposure) {
@@ -576,7 +577,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// 开始进行bean 实例的初始化
 		Object exposedObject = bean;
 		try {
-			// 填充bean属性，依赖注入, 其中属性可能存在对其它bean的依赖
+			// 填充bean属性，依赖注入, 其中属性可能存在对其它bean的依赖,此时会递归初始化依赖的bean
 			populateBean(beanName, mbd, instanceWrapper);
 			/**
 			 * 	调用初始化方法，应用aware,BeanPostProcessor 等回调接口，顺序为：
@@ -1383,13 +1384,17 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	@SuppressWarnings("deprecation")  // for postProcessPropertyValues
 	protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
+		// 如果beanWrapper为空
 		if (bw == null) {
+			// 但是mbd有需要设置的属性
 			if (mbd.hasPropertyValues()) {
+				// 抛出bean创建异常
 				throw new BeanCreationException(
 						mbd.getResourceDescription(), beanName, "Cannot apply property values to null instance");
 			}
 			else {
 				// Skip property population phase for null instance.
+				// 没有可填充的属性，直接跳过
 				return;
 			}
 		}
@@ -1397,72 +1402,115 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
 		// state of the bean before properties are set. This can be used, for example,
 		// to support styles of field injection.
+		// 给任何实现了InstantiationAwareBeanPostProcessors的子类机会去修改bean的状态再设置属性之前，可以被用来支持类型的字段注入
+
+		// 否是"synthetic"。一般是指只有AOP相关的pointcut配置或者Advice配置才会将 synthetic设置为true
+		// 如果mdb是不是'syntheic'且 工厂拥有InstiationAwareBeanPostProcessor
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
+			// 遍历工厂中的BeanPostProcessor对象
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
+				// 如果 bp 是 InstantiationAwareBeanPostProcessor 实例
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+					// postProcessAfterInstantiation:一般用于设置属性
 					if (!ibp.postProcessAfterInstantiation(bw.getWrappedInstance(), beanName)) {
 						return;
 					}
 				}
 			}
 		}
-
+		// PropertyValues: 包含以一个或多个PropertyValue对象的容器，通常包括针对特定目标Bean的一次更新
+		// 如果mdb有PropertyValues就获取其PropertyValues
 		PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
-
+		// 获取 mbd 的 自动装配模式, 确定了装配模式，实例化需要装配的bean，如果是装配模式是默认的0，则最终通过下面的AutowiredAnnotationBeanPostProcessor实例化依赖的bean
 		int resolvedAutowireMode = mbd.getResolvedAutowireMode();
+		// 如果 自动装配模式 为 按名称自动装配bean属性 或者 按类型自动装配bean属性
 		if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
+			// MutablePropertyvalues: PropertyValues接口的默认实现。允许对属性进行简单操作，并提供构造函数来支持从映射 进行深度复制和构造
 			MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
 			// Add property values based on autowire by name if applicable.
+			// 根据autotowire的名称(如适用)添加属性值
 			if (resolvedAutowireMode == AUTOWIRE_BY_NAME) {
+				// 通过bw的PropertyDescriptor属性名，查找出对应的Bean对象，将其添加到newPvs中
 				autowireByName(beanName, mbd, bw, newPvs);
 			}
 			// Add property values based on autowire by type if applicable.
+			// 根据自动装配的类型(如果适用)添加属性值1
 			if (resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
+				// 通过bw的PropertyDescriptor属性类型，查找出对应的Bean对象，将其添加到newPvs中
 				autowireByType(beanName, mbd, bw, newPvs);
 			}
+			// pvs重新引用newPvs,newPvs此时已经包含了pvs的属性值以及通过AUTOWIRE_BY_NAME，AUTOWIRE_BY_TYPE自动装配所得到的属性值
 			pvs = newPvs;
 		}
-
+		// 工厂是否拥有InstiationAwareBeanPostProcessor
 		boolean hasInstAwareBpps = hasInstantiationAwareBeanPostProcessors();
+		// mbd.getDependencyCheck()，默认返回 DEPENDENCY_CHECK_NONE，表示 不检查
+		// 是否需要依赖检查
 		boolean needsDepCheck = (mbd.getDependencyCheck() != AbstractBeanDefinition.DEPENDENCY_CHECK_NONE);
 
+		// 经过筛选的PropertyDesciptor数组,存放着排除忽略的依赖项或忽略项上的定义的属性
 		PropertyDescriptor[] filteredPds = null;
+		// 如果工厂拥有InstiationAwareBeanPostProcessor, 处理几个注解的赋值工作的两个关键子类是
+		// CommonAnnotationBeanPostProcessor AutowiredAnnotationBeanPostProcessor
 		if (hasInstAwareBpps) {
+			// 如果pvs为nuLL
 			if (pvs == null) {
+				// 尝试获取mbd的PropertyValues
 				pvs = mbd.getPropertyValues();
 			}
+			// 遍历工厂内的所有后置处理器
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
+				// 如果 bp 是 InstantiationAwareBeanPostProcessor 的实例
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
+					// 将bp 强转成 InstantiationAwareBeanPostProcessor 对象
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+					// postProcessProperties;在工广将给定的属性值应用到给定Bean之前，对它们进行后处，不需要任何属性扫描符。该回调法在未来的版本会被制掉.
+					// -- 取而代之的是 postProcessPropertyValues 回调方法。
+					// 让ibp对pvs增加对bw的Bean对象的propertyValue，或编辑pvs的propertyValue
 					PropertyValues pvsToUse = ibp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
+					// 如果pvs为nulL
 					if (pvsToUse == null) {
+						// 如果filteredPds为nulI
 						if (filteredPds == null) {
+							// mbd.allowCaching:是否允许缓存，默认时允许的。缓存除了可以提高效率以外，还可以保证在并发的情况下，返回的PropertyDesciptor[]永远都是
+							// 从bw提取一组经过筛选的PropertyDesciptor,排除忽略的依赖项或忽略项上的定义的属性
 							filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
 						}
+						// postProcessPropertyValues:一般进行检查是否所有依赖项都满足，例如基于"Require"注释在 bean属性 setter
+						// -- 替换要应用的属性值，通常是通过基于原始的PropertyValues创建一个新的MutablePropertyValue实例， 添加或删除特定的值
+						// -- 返的PropertyValues 将应用于bw包装的bean实例 的实际属性值(添加PropertyValues实例到pvs 或者 设置为nuLL以跳过属性填充)
+						// 回到ipd的postProcessPropertyValues方法
 						pvsToUse = ibp.postProcessPropertyValues(pvs, filteredPds, bw.getWrappedInstance(), beanName);
+						// 如果pvsTouse为null，将终止该方法精致，以跳过属性填充
 						if (pvsToUse == null) {
 							return;
 						}
 					}
+					// 让pvs引用pvsTouse
 					pvs = pvsToUse;
 				}
 			}
 		}
+		// 如果需要依赖检查 一般都是false
 		if (needsDepCheck) {
+			// 如果filteredPds为nulL
 			if (filteredPds == null) {
+				// 从bw提取一组经过筛选的PropertyDesciptor,排除忽略的依赖项或忽略项上的定义的属性
 				filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
 			}
+			// 检查依赖项:主要检查pd的setter方法需要赋值时,pvs中有没有满足其pd的需求的属性值可供其赋值
 			checkDependencies(beanName, mbd, filteredPds, pvs);
 		}
-
+		// 如果pvs不为null（上面是自动装配时属性的设置，这里就是一些配置文件中指定属性等情况的设置逻辑）
 		if (pvs != null) {
-			//处理属性依赖的方法
+			// 应用给定的属性值，解决任何在这个bean工厂运行时其他bean的引用。必须使用深拷贝，所以我们 不会永久地修改这个属性
 			applyPropertyValues(beanName, mbd, bw, pvs);
 		}
 	}
 
 	/**
+	 * 通过bw的PropertyDescriptor属性名，查找出对应的Bean对象，将其添加到pvs中
 	 * Fill in any missing property values with references to
 	 * other beans in this factory if autowire is set to "byName".
 	 * @param beanName the name of the bean we're wiring up.
@@ -1473,19 +1521,26 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected void autowireByName(
 			String beanName, AbstractBeanDefinition mbd, BeanWrapper bw, MutablePropertyValues pvs) {
-
+		// 获取bw中有setter方法 && 非简单类型属性 && mbd的PropertyValues中没有该pd的属性名的 PropertyDescriptor 属性名数组
 		String[] propertyNames = unsatisfiedNonSimpleProperties(mbd, bw);
+		// 遍历属性名
 		for (String propertyName : propertyNames) {
+			// 如果该bean工厂有propertyName的beanDefinition或外部注册的singleton实例
 			if (containsBean(propertyName)) {
+				// 获取该工厂中propertyName的bean对象
 				Object bean = getBean(propertyName);
+				// 将propertyName,bean添加到pvs中
 				pvs.add(propertyName, bean);
+				// 保存propertyName与beanName的依赖关系
 				registerDependentBean(propertyName, beanName);
+				// 打印跟踪日志
 				if (logger.isTraceEnabled()) {
 					logger.trace("Added autowiring by name from bean name '" + beanName +
 							"' via property '" + propertyName + "' to bean named '" + propertyName + "'");
 				}
 			}
 			else {
+				// 打印跟踪日志
 				if (logger.isTraceEnabled()) {
 					logger.trace("Not autowiring property '" + propertyName + "' of bean '" + beanName +
 							"' by name: no matching bean found");
@@ -1507,39 +1562,60 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected void autowireByType(
 			String beanName, AbstractBeanDefinition mbd, BeanWrapper bw, MutablePropertyValues pvs) {
-
+		// 获取工厂的自定义类型转换器
 		TypeConverter converter = getCustomTypeConverter();
+		// 如果没有配置自定义类型转换器
 		if (converter == null) {
+			// 使用bw作为类型转换器
 			converter = bw;
 		}
-
+		// 存放所有候选Bean名的集合
 		Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
+		// 获取bw中有setter方法 && 非简单类型属性 && mbd的PropertyValues中没有该pd的属性名的 PropertyDescriptor
 		String[] propertyNames = unsatisfiedNonSimpleProperties(mbd, bw);
+		// 遍历属性名数组
 		for (String propertyName : propertyNames) {
 			try {
+				//PropertyDescriptor:表示JavaBean类通过存储器导出一个属性
+				// 从bw中获取propertyName对应的PropertyDescriptor
 				PropertyDescriptor pd = bw.getPropertyDescriptor(propertyName);
 				// Don't try autowiring by type for type Object: never makes sense,
 				// even if it technically is a unsatisfied, non-simple property.
+				// 不要尝试按类型自动装配对象:永远是有意义的，即使它在技术上是一个不满意，复杂属性
+				// 如果pd的属性值类型不是 object
 				if (Object.class != pd.getPropertyType()) {
+					// 获取pd属性的Setter方法的方法参数包装对象
 					MethodParameter methodParam = BeanUtils.getWriteMethodParameter(pd);
 					// Do not allow eager init for type matching in case of a prioritized post-processor.
+					// 判断bean对象是否是Priorityorder实例，如果不是就允许急于初始化来进行类型匹配
+					// eager为true时会导致初始化lazy-init单例和由FactoryBeans(或带有"factory-bean"引用的工厂方法)创建 的对象以进行类型检查
 					boolean eager = !(bw.getWrappedInstance() instanceof PriorityOrdered);
+					// AutowireByTypeDependencyDescriptor:根据类型依赖自动注入的描述符，重写了 getDependencyName() 方法，使其永远返nuLl
+					// 将 methodParam 封装包装成AutowireByTypeDependencyDescriptor对象
 					DependencyDescriptor desc = new AutowireByTypeDependencyDescriptor(methodParam, eager);
+					// 根据据desc的依赖类型解析出与descriptor所包装的对象匹配的候选Bean对象
 					Object autowiredArgument = resolveDependency(desc, beanName, autowiredBeanNames, converter);
+					// 如果autowiredArgument不为null
 					if (autowiredArgument != null) {
+						// 将proeprtyName.autowireArgument作为键值添加到pvs中
 						pvs.add(propertyName, autowiredArgument);
 					}
+					// 遍历所有候选Bean名集合
 					for (String autowiredBeanName : autowiredBeanNames) {
+						// 注册beanName与dependentBeanNamed的依赖关系
 						registerDependentBean(autowiredBeanName, beanName);
+						// 打印跟踪日志
 						if (logger.isTraceEnabled()) {
 							logger.trace("Autowiring by type from bean name '" + beanName + "' via property '" +
 									propertyName + "' to bean named '" + autowiredBeanName + "'");
 						}
 					}
+					// 将候选Bean名集合清空
 					autowiredBeanNames.clear();
 				}
 			}
 			catch (BeansException ex) {
+				// 捕捉自动装配时抛出的Bean异常，重新抛出 不满足依赖异常
 				throw new UnsatisfiedDependencyException(mbd.getResourceDescription(), beanName, propertyName, ex);
 			}
 		}
@@ -1556,15 +1632,22 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see org.springframework.beans.BeanUtils#isSimpleProperty
 	 */
 	protected String[] unsatisfiedNonSimpleProperties(AbstractBeanDefinition mbd, BeanWrapper bw) {
+		// TreeSet:TreeSet底层是二叉树，可以对对象元素进行排序，但是自定义类需要实现comparable接口，重写comparaTo()方法。
 		Set<String> result = new TreeSet<>();
+		// 获取mbd的所有属性值
 		PropertyValues pvs = mbd.getPropertyValues();
+		// PropertyDescriptor:表示JavaBean类通过存储器导出一个属性，获取bw的所有属性描述对象
 		PropertyDescriptor[] pds = bw.getPropertyDescriptors();
+		// 遍历属性描述对象
 		for (PropertyDescriptor pd : pds) {
+			// 如果 pd有写入属性方法 && 该pd不是被排除在依赖项检查之外 && pvs没有该pd的属性名 && pd的属性类型不是"简单值类型"
 			if (pd.getWriteMethod() != null && !isExcludedFromDependencyCheck(pd) && !pvs.contains(pd.getName()) &&
 					!BeanUtils.isSimpleProperty(pd.getPropertyType())) {
+				// 将pd的属性名添加到resutt中
 				result.add(pd.getName());
 			}
 		}
+		// 将result装换成数组
 		return StringUtils.toStringArray(result);
 	}
 
@@ -1616,6 +1699,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see #ignoreDependencyInterface(Class)
 	 */
 	protected boolean isExcludedFromDependencyCheck(PropertyDescriptor pd) {
+		// pd的属性是CGLIB定义的属性 || 该工厂的忽略依赖类型列表中包含该pd的属性类型 ||
+		// pd的属性是ignoredDependencyInterfaces里面的接口定义的方法
 		return (AutowireUtils.isExcludedFromDependencyCheck(pd) ||
 				this.ignoredDependencyTypes.contains(pd.getPropertyType()) ||
 				AutowireUtils.isSetterDefinedInInterface(pd, this.ignoredDependencyInterfaces));
@@ -1660,69 +1745,102 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @param pvs the new property values
 	 */
 	protected void applyPropertyValues(String beanName, BeanDefinition mbd, BeanWrapper bw, PropertyValues pvs) {
+		// 如果pvs没有propertyValue
 		if (pvs.isEmpty()) {
+			// 直接结束方法
 			return;
 		}
-
+		// 如果有安全管理器，且bw是BeanWrapperImpl的实例
 		if (System.getSecurityManager() != null && bw instanceof BeanWrapperImpl) {
+			// 设置bw的安全上下文为工厂的访问控制上下文
 			((BeanWrapperImpl) bw).setSecurityContext(getAccessControlContext());
 		}
-
+		// MutablePropertyValues: Propertyvalues接口的默认实现。允许对属性进行简单操作，并提供构造函数来支持从映射进行深度复制和构造
 		MutablePropertyValues mpvs = null;
+		// 原始属性列表
 		List<PropertyValue> original;
-
+		// 如果pvs是MutablePropertyValues
 		if (pvs instanceof MutablePropertyValues) {
+			// 类型强制转换
 			mpvs = (MutablePropertyValues) pvs;
+			// isConverted:返回该holder是否只包含转换后的值(true),或者是否仍然需要转换这些值
+			// 如果mpvs只包含转换后的值
 			if (mpvs.isConverted()) {
 				// Shortcut: use the pre-converted values as-is.
 				try {
+					// 己完成，直接返回
 					bw.setPropertyValues(mpvs);
 					return;
 				}
 				catch (BeansException ex) {
+					// 捕捉Bean异常，重新抛出Bean创佳异常: 错误设置属性值。
 					throw new BeanCreationException(
 							mbd.getResourceDescription(), beanName, "Error setting property values", ex);
 				}
 			}
+			// 获取mpvs的PropertyValue列表
 			original = mpvs.getPropertyValueList();
 		}
 		else {
+			// 获取pvs的PropertyVaLue对象数组，并将其转换成列表
 			original = Arrays.asList(pvs.getPropertyValues());
 		}
-
+		// 获取用户自定义类型转换器
 		TypeConverter converter = getCustomTypeConverter();
+		// 如果转换器为空，则直接把包装类赋值给converter
 		if (converter == null) {
 			converter = bw;
 		}
+		// BeanDefinitionvalueResolver:bean广实现中使用Helper类，它将beanDefinition对象中包含的值解新为应用于 日标bean实例的实际值
 		BeanDefinitionValueResolver valueResolver = new BeanDefinitionValueResolver(this, beanName, mbd, converter);
 
 		// Create a deep copy, resolving any references for values.
+		// 创建一个深拷贝，解析任何值引用
 		List<PropertyValue> deepCopy = new ArrayList<>(original.size());
+		// 是否还需要解析标记
 		boolean resolveNecessary = false;
+		// 遍历属性，将属性转换为对应类的对应属性的类型
 		for (PropertyValue pv : original) {
+			// 如果该属性已经解析过
 			if (pv.isConverted()) {
+				// 将pv添加到deepcopy中
 				deepCopy.add(pv);
 			}
+			// 如果属性没有被解析过
 			else {
+				// 获取属性的名字
 				String propertyName = pv.getName();
+				// 获取未经类型转换的值
 				Object originalValue = pv.getValue();
-				//对引用类型的值进行处理
+				// 对引用类型的值进行处理
+				// 交由valueResolver根据pv解析出originaLValue所封装的对象
 				Object resolvedValue = valueResolver.resolveValueIfNecessary(pv, originalValue);
+				// 默认转换后的值是刚解析出来的值
 				Object convertedValue = resolvedValue;
+				// 可转换标记: propertyName是否bw中的可写属性 && prepertyName不是表示索属性或套属性
+				// (如果propertyName中有','||'["就认为是素引属性或嵌套属性)
 				boolean convertible = bw.isWritableProperty(propertyName) &&
 						!PropertyAccessorUtils.isNestedOrIndexedProperty(propertyName);
+				// 如果可转换
 				if (convertible) {
 					// 类型转换，先propertyEditory后conversionServicce顺序生效
+					// 将resolvedVaLue转换为指定的目标属性对象
 					convertedValue = convertForProperty(resolvedValue, propertyName, bw, converter);
 				}
 				// Possibly store converted value in merged bean definition,
 				// in order to avoid re-conversion for every created bean instance.
+				// 可以将转换后的值存储合并后BeanDefinition中，以避免对每个创建的Bean实例进行重新转换
+				// 如果resolvedVaue与originalValue是同一个对象
 				if (resolvedValue == originalValue) {
+					// 如果可转换
 					if (convertible) {
+						// 将convertedVaLue设置到pv中
 						pv.setConvertedValue(convertedValue);
 					}
+					// 将pv添加到deepCopy中
 					deepCopy.add(pv);
 				}
+				// TypedStringValue:类型字符串的Holder,这个holder将只存储字符串值和目标类型。实际得转换将由Bean工厂执行
 				else if (convertible && originalValue instanceof TypedStringValue &&
 						!((TypedStringValue) originalValue).isDynamic() &&
 						!(convertedValue instanceof Collection || ObjectUtils.isArray(convertedValue))) {

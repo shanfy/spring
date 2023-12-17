@@ -566,11 +566,15 @@ public abstract class BeanUtils {
 	 * @see #isSimpleValueType(Class)
 	 */
 	public static boolean isSimpleProperty(Class<?> type) {
+		// 如果type为null抛出异常
 		Assert.notNull(type, "'type' must not be null");
+		// 如果type是"简单"值类型 (type是数组 & type的元素类型是否"简单"值类型) 就为ture; 否则为false
 		return isSimpleValueType(type) || (type.isArray() && isSimpleValueType(type.getComponentType()));
 	}
 
 	/**
+	 *  检查给定的类型是否表示“简单” 值类型: primitive 或者 primitive 包装器，教举，宁符串
+	 *  或其他字符，数字，日期，时态，URI，URL，语言环境或类
 	 * Check if the given type represents a "simple" value type: a primitive or
 	 * primitive wrapper, an enum, a String or other CharSequence, a Number, a
 	 * Date, a URI, a URL, a Locale, or a Class.
