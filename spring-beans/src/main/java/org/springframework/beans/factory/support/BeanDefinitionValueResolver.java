@@ -16,15 +16,6 @@
 
 package org.springframework.beans.factory.support;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.TypeConverter;
@@ -32,15 +23,14 @@ import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.config.RuntimeBeanNameReference;
-import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.config.TypedStringValue;
+import org.springframework.beans.factory.config.*;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * Helper class for use in bean factory implementations,
@@ -350,16 +340,22 @@ class BeanDefinitionValueResolver {
 	@Nullable
 	private Object resolveReference(Object argName, RuntimeBeanReference ref) {
 		try {
+			// 定义用于一个存储bean对象的变量
 			Object bean;
+			// 获取另一个Bean引用的Bean类型
 			String refName = ref.getBeanName();
 			refName = String.valueOf(doEvaluate(refName));
+			// 如果引用来自父工厂
 			if (ref.isToParent()) {
+				// 如果没有父工厂
 				if (this.beanFactory.getParentBeanFactory() == null) {
+					// 抛出Bean创建异常:无法解析对bean的引用 ref在父工厂中:没有可以的父工厂
 					throw new BeanCreationException(
 							this.beanDefinition.getResourceDescription(), this.beanName,
 							"Can't resolve reference to bean '" + refName +
 									"' in parent factory: no parent factory available");
 				}
+				// 获取父工厂中的bean实例
 				bean = this.beanFactory.getParentBeanFactory().getBean(refName);
 			}
 			else {
@@ -390,26 +386,42 @@ class BeanDefinitionValueResolver {
 	private Object resolveInnerBean(Object argName, String innerBeanName, BeanDefinition innerBd) {
 		RootBeanDefinition mbd = null;
 		try {
+			// 获取innerBd与beanDefinition合并后的BeanDefinition对象
 			mbd = this.beanFactory.getMergedBeanDefinition(innerBeanName, innerBd, this.beanDefinition);
 			// Check given bean name whether it is unique. If not already unique,
 			// add counter - increasing the counter until the name is unique.
+			// 检査给定的Bean名是否唯一。如果还不是唯一的,添加计数器-增加计数器,直到名称唯一为止。
+			// 解决内部Bean名需要唯一的问题
+			// 定义实际的内部Bean名,初始为innerBeanName
 			String actualInnerBeanName = innerBeanName;
+			// 如果mbd配置成了单例
 			if (mbd.isSingleton()) {
+				// 调整innerBeanName,直到该Bean名在工厂中唯一。最后将结果赋值给actualInnerBeanName
 				actualInnerBeanName = adaptInnerBeanName(innerBeanName);
 			}
+			// 将actualInnerBeanName和beanName的包含关系注册到该工厂中
 			this.beanFactory.registerContainedBean(actualInnerBeanName, this.beanName);
 			// Guarantee initialization of beans that the inner bean depends on.
+			// 确保内部Bean依赖的Bean的初始化，获取mdb的要依赖的Bean名
 			String[] dependsOn = mbd.getDependsOn();
+			// 如果有需要依赖的Bean名
 			if (dependsOn != null) {
+				// 遍历depensOn
 				for (String dependsOnBean : dependsOn) {
+					// 注册dependsOnBean与actualInnerBeanName的依赖关系到该工厂中
 					this.beanFactory.registerDependentBean(dependsOnBean, actualInnerBeanName);
+					// 获取dependsOnBean的Bean对像(不引用，只是为了让dependsOnBean所对应的Bean对象实例化)
 					this.beanFactory.getBean(dependsOnBean);
 				}
 			}
 			// Actually create the inner bean instance now...
+			// 实际上现有创建内部bean实例，创建actualInnerBeanName的Bean对象
 			Object innerBean = this.beanFactory.createBean(actualInnerBeanName, mbd, null);
+			// 如果innerBean时FactoryBean的实例
 			if (innerBean instanceof FactoryBean) {
+				// mbds是否是"synthetic"的标记。一般是指只有AOP相关的prointCut配置或者Advice配置才会将synthetic设置为true
 				boolean synthetic = mbd.isSynthetic();
+				// 从BeanFactory对象中获取管理的对象，只有mbd不是synthetic才对其对象进行该工厂的后置处理
 				innerBean = this.beanFactory.getObjectFromFactoryBean(
 						(FactoryBean<?>) innerBean, actualInnerBeanName, !synthetic);
 			}
@@ -428,53 +440,78 @@ class BeanDefinitionValueResolver {
 	}
 
 	/**
+	 * 检查给定Bean名是否唯一,如果还不是唯一的,则添加该计数器，直到名称唯一位置
 	 * Checks the given bean name whether it is unique. If not already unique,
 	 * a counter is added, increasing the counter until the name is unique.
 	 * @param innerBeanName the original name for the inner bean
 	 * @return the adapted name for the inner bean
 	 */
 	private String adaptInnerBeanName(String innerBeanName) {
+		// 定义一个实际内部Bean名变量，初始为innerBean名
 		String actualInnerBeanName = innerBeanName;
+		// 定义一个用于计数的计数器，初始为0
 		int counter = 0;
+		// 只要actualInnerBeanName是否已在该工厂中使用就继续循环,即actualInnerBeanName是否是别名
+		// 或该工厂是否已包含actualInnerBeanName的bean对象或该工厂是否已经为actualInnerBeanName注册了依赖Bean关系
 		while (this.beanFactory.isBeanNameInUse(actualInnerBeanName)) {
+			// 计数器+1
 			counter++;
+			// 让actualInnerBeanName重新引用拼接后的字符串:innerBeanName+'#'+count
 			actualInnerBeanName = innerBeanName + BeanFactoryUtils.GENERATED_BEAN_NAME_SEPARATOR + counter;
 		}
+		// 返回经过调整后的Bean名
 		return actualInnerBeanName;
 	}
 
 	/**
+	 * 解析ManagedArray对象，以得到解析后的数组对象
 	 * For each element in the managed array, resolve reference if necessary.
 	 */
 	private Object resolveManagedArray(Object argName, List<?> ml, Class<?> elementType) {
+		// 创建一个用于存放解析后的实例对象的elementType类型长度为ml大小的数组
 		Object resolved = Array.newInstance(elementType, ml.size());
+		// 遍历ml(以fori形式)
 		for (int i = 0; i < ml.size(); i++) {
+			// 获取第i个m元素对象，解析出该元素对象的实例对象然后设置到第i个resolved元素中
 			Array.set(resolved, i, resolveValueIfNecessary(new KeyedArgName(argName, i), ml.get(i)));
 		}
+		// 返回解析后的的数组对象【resolved)
 		return resolved;
 	}
 
 	/**
+	 * 解析ManagedList对象，以得到解析后的List对象
 	 * For each element in the managed list, resolve reference if necessary.
 	 */
 	private List<?> resolveManagedList(Object argName, List<?> ml) {
+		// 定义一个用于存放解析后的实例对象的ArrayList，初始容量为ml大小
 		List<Object> resolved = new ArrayList<>(ml.size());
+		// 遍历ml(以fori形式)
 		for (int i = 0; i < ml.size(); i++) {
+			// 获取第i个ml元素对象，解析出该元素对象的实例对象然后添加到resolved中
 			resolved.add(resolveValueIfNecessary(new KeyedArgName(argName, i), ml.get(i)));
 		}
+		// 返回【resolved)
 		return resolved;
 	}
 
 	/**
+	 * 解析ManagedSet对象，以得到解析后的Set对象
 	 * For each element in the managed set, resolve reference if necessary.
 	 */
 	private Set<?> resolveManagedSet(Object argName, Set<?> ms) {
+		// 定义一个用于存放解析后的实例对象的LinkedHashSet，初始容量为ml大小
 		Set<Object> resolved = new LinkedHashSet<>(ms.size());
+		// 定义一个遍历时的偏移量i
 		int i = 0;
+		// 遍历ms，元素为m
 		for (Object m : ms) {
+			// 解析出该m的实例对象然后添加到resolved中
 			resolved.add(resolveValueIfNecessary(new KeyedArgName(argName, i), m));
+			// 偏移量+1
 			i++;
 		}
+		// 返回resolved
 		return resolved;
 	}
 

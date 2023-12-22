@@ -1845,20 +1845,27 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 						!((TypedStringValue) originalValue).isDynamic() &&
 						!(convertedValue instanceof Collection || ObjectUtils.isArray(convertedValue))) {
 					pv.setConvertedValue(convertedValue);
+					// 将pv添加到deepCopy中
 					deepCopy.add(pv);
 				}
 				else {
+					// 标记还需要解析
 					resolveNecessary = true;
+					// 根据pv,convertedValue构建PropertyValue对象，并添加到deepCopy中
 					deepCopy.add(new PropertyValue(pv, convertedValue));
 				}
 			}
 		}
+		// mpvs不为null && 已经不需要解析
 		if (mpvs != null && !resolveNecessary) {
+			// 将此holder标记为只包含转换后的值
 			mpvs.setConverted();
 		}
 
 		// Set our (possibly massaged) deep copy.
 		try {
+			// 此处才正式赋值：按原样使用deepCopy构造一个新的MutablePropertyValues对象然后设置到bw中以对bw的属性值更新
+			// 最终调用对应属性的set方法赋值
 			bw.setPropertyValues(new MutablePropertyValues(deepCopy));
 		}
 		catch (BeansException ex) {
