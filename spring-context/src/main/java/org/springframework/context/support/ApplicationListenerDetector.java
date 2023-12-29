@@ -75,7 +75,7 @@ class ApplicationListenerDetector implements DestructionAwareBeanPostProcessor, 
 	}
 
 	/**
-	 *  将我们自定义的单例类作为监听器添加到applicationEventMulticaster里
+	 *  就是为了将我们自定义的单例类作为监听器添加到applicationEventMulticaster里
 	 */
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) {
