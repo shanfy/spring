@@ -1753,7 +1753,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @param pvs the new property values
 	 */
 	protected void applyPropertyValues(String beanName, BeanDefinition mbd, BeanWrapper bw, PropertyValues pvs) {
-		// 如果pvs没有propertyValue
+		// 如果pvs没有propertyValue(标签property设置的值，bean标签没有包含property标签时，为空 )
 		if (pvs.isEmpty()) {
 			// 直接结束方法
 			return;
@@ -1825,13 +1825,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				Object resolvedValue = valueResolver.resolveValueIfNecessary(pv, originalValue);
 				// 默认转换后的值是刚解析出来的值
 				Object convertedValue = resolvedValue;
-				// 可转换标记: propertyName是否bw中的可写属性 && prepertyName不是表示索属性或套属性
-				// (如果propertyName中有','||'["就认为是素引属性或嵌套属性)
+				// 可转换标记: propertyName是否bw中的可写属性 && prepertyName不是表示索引属性或嵌套属性
+				// (如果propertyName中有'.'||'["就认为是素引属性或嵌套属性)
 				boolean convertible = bw.isWritableProperty(propertyName) &&
 						!PropertyAccessorUtils.isNestedOrIndexedProperty(propertyName);
 				// 如果可转换
 				if (convertible) {
-					// 类型转换，先propertyEditory后conversionServicce顺序生效
+					// 类型转换，先propertyEditor后conversionServicce顺序生效
 					// 将resolvedVaLue转换为指定的目标属性对象
 					convertedValue = convertForProperty(resolvedValue, propertyName, bw, converter);
 				}
@@ -1842,7 +1842,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				if (resolvedValue == originalValue) {
 					// 如果可转换
 					if (convertible) {
-						// 将convertedVaLue设置到pv中
+						// 将convertedVaLue设置到pv中 ,此时会将converted设置为true
 						pv.setConvertedValue(convertedValue);
 					}
 					// 将pv添加到deepCopy中

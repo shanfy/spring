@@ -1511,22 +1511,30 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 */
 	@Nullable
 	protected Object evaluateBeanDefinitionString(@Nullable String value, @Nullable BeanDefinition beanDefinition) {
+		// 如果该工厂没有设置bean定义值中表达式的解析策略
 		if (this.beanExpressionResolver == null) {
+			// 直接返回要检查的值
 			return value;
 		}
-
+		// 值所来自的bean定义的当前目标作用域
 		Scope scope = null;
+		// 如果有传入值所来自的bean定义
 		if (beanDefinition != null) {
+			// 获取值所来自的bean定义的当前目标作用域名
 			String scopeName = beanDefinition.getScope();
+			// 如果成功获得值所来自的bean定义的当前目标作用域名
 			if (scopeName != null) {
+				// 获取scopeName对应的Scope对象
 				scope = getRegisteredScope(scopeName);
 			}
 		}
+		// 评估value作为表达式(如果适用);否则按原样返回值
 		return this.beanExpressionResolver.evaluate(value, new BeanExpressionContext(this, scope));
 	}
 
 
 	/**
+	 * 预测mbd 所指的bean的最终bean类型（已处理bean实例的类型）
 	 * Predict the eventual bean type (of the processed bean instance) for the
 	 * specified bean. Called by {@link #getType} and {@link #isTypeMatch}.
 	 * Does not need to handle FactoryBeans specifically, since it is only

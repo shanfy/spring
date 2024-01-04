@@ -267,20 +267,26 @@ class BeanDefinitionValueResolver {
 	}
 
 	/**
+	 * 在value封装的value可解析成表达式的情况下，将value封装的value评估为表达式并解析出表达式的值
 	 * Evaluate the given value as an expression, if necessary.
 	 * @param value the candidate value (may be an expression)
 	 * @return the resolved value
 	 */
 	@Nullable
 	protected Object evaluate(TypedStringValue value) {
+		// 如有必要(value可解析成表达式的情况下)，将value封装的value评估为表达式并解析出表达式的值
 		Object result = doEvaluate(value.getValue());
+		// 如果result与value所封装的value不相等
 		if (!ObjectUtils.nullSafeEquals(result, value.getValue())) {
+			// 将value标记为动态，即包含一个表达式，因此不进行缓存
 			value.setDynamic();
 		}
+		// 返回result
 		return result;
 	}
 
 	/**
+	 * 对于value是String/String[]类型会尝试评估为表达式并解析出表达式的值，其他类型直接返回value
 	 * Evaluate the given value as an expression, if necessary.
 	 * @param value the original value (may be an expression)
 	 * @return the resolved value if necessary, or the original value
@@ -310,16 +316,19 @@ class BeanDefinitionValueResolver {
 	}
 
 	/**
+	 * 如有必要(value可解析成表达式的情况下)，将给定的String值评估为表达式并解析出表达式的值
 	 * Evaluate the given String value as an expression, if necessary.
 	 * @param value the original value (may be an expression)
 	 * @return the resolved value if necessary, or the original String value
 	 */
 	@Nullable
 	private Object doEvaluate(@Nullable String value) {
+		// 评估value,如果value是可解析表达式，会对其进行解析，否则直接返回value
 		return this.beanFactory.evaluateBeanDefinitionString(value, this.beanDefinition);
 	}
 
 	/**
+	 * 在给定的TypedStringValue中解析目标类型
 	 * Resolve the target type in the given TypedStringValue.
 	 * @param value the TypedStringValue to resolve
 	 * @return the resolved target type (or {@code null} if none specified)
@@ -328,7 +337,9 @@ class BeanDefinitionValueResolver {
 	 */
 	@Nullable
 	protected Class<?> resolveTargetType(TypedStringValue value) throws ClassNotFoundException {
+		// 如果value有携带目标类型
 		if (value.hasTargetType()) {
+			// 返回value的目标类型
 			return value.getTargetType();
 		}
 		return value.resolveTargetType(this.beanFactory.getBeanClassLoader());
