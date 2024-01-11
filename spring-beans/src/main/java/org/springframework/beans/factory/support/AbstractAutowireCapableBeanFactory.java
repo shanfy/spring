@@ -560,7 +560,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				}
 				catch (Throwable ex) {
 					throw new BeanCreationException(mbd.getResourceDescription(), beanName,
-							"Post-processing of merged bean definition failed", ex);
+							"Post-processing of merged beRn definition failed", ex);
 				}
 				mbd.postProcessed = true;
 			}
@@ -1420,7 +1420,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				// 如果 bp 是 InstantiationAwareBeanPostProcessor 实例
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
-					// postProcessAfterInstantiation:一般用于设置属性
+					// postProcessAfterInstantiation:一般用于设置属性, 不过一般不会更改，一般会走下面的标准化流程，这种就是为了某些特殊需求的扩展需要
+					// 返回false后，后续属性处理就不会处理了，所以要修改属性可以返回fasle, 防止被覆盖
 					if (!ibp.postProcessAfterInstantiation(bw.getWrappedInstance(), beanName)) {
 						return;
 					}
@@ -1515,6 +1516,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 应用给定的属性值，解决任何在这个bean工厂运行时其他bean的引用。必须使用深拷贝，所以我们 不会永久地修改这个属性
 			applyPropertyValues(beanName, mbd, bw, pvs);
 		}
+		// 为什么pvs没有回写到mbd中实现解析的复用呢？
+		// 因为创建对象的时候要保留最原始的mbd,防止创建时修改了bean定义，下面的applyProperties方法的深拷贝也是类似，就是各个创建过程相互独立，防止影响
 	}
 
 	/**
@@ -1831,7 +1834,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 						!PropertyAccessorUtils.isNestedOrIndexedProperty(propertyName);
 				// 如果可转换
 				if (convertible) {
-					// 类型转换，先propertyEditor后conversionServicce顺序生效
+					// 类型转换，先propertyEditor后conversionService顺序生效
 					// 将resolvedVaLue转换为指定的目标属性对象
 					convertedValue = convertForProperty(resolvedValue, propertyName, bw, converter);
 				}
@@ -1960,7 +1963,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * 其它aware接口会通过 BPP设置回调：
 	 * @see org.springframework.context.support.ApplicationContextAwareProcessor#invokeAwareInterfaces(java.lang.Object)
 	 * 疑惑：为什么这里只处理这三个Aware接口呢或者说为什么分开处理：
-	 * 前面创建factory的时候忽略了这三个接口: @see org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#AbstractAutowireCapableBeanFactory()
+	 * 前面创建factory的时候忽略了这三个接口:
+	 * @see org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#AbstractAutowireCapableBeanFactory()
 	 * 在prepareBeanFactory的时候又设置忽略了其他的几个Aware接口，为什么这么做呢
 	 * 猜测可能是因为BeanFactory主要分为两个分支，AbstractBeanFactory和ApplicationContext，因此不同的分支侧重的Aware接口有所不同
 	 */

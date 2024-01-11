@@ -430,7 +430,7 @@ class BeanDefinitionValueResolver {
 			Object innerBean = this.beanFactory.createBean(actualInnerBeanName, mbd, null);
 			// 如果innerBean时FactoryBean的实例
 			if (innerBean instanceof FactoryBean) {
-				// mbds是否是"synthetic"的标记。一般是指只有AOP相关的prointCut配置或者Advice配置才会将synthetic设置为true
+				// mbds是否是"synthetic"的标记。一般只有AOP相关的pointCut配置或者Advice配置才会将synthetic设置为true
 				boolean synthetic = mbd.isSynthetic();
 				// 从BeanFactory对象中获取管理的对象，只有mbd不是synthetic才对其对象进行该工厂的后置处理
 				innerBean = this.beanFactory.getObjectFromFactoryBean(
@@ -451,13 +451,13 @@ class BeanDefinitionValueResolver {
 	}
 
 	/**
-	 * 检查给定Bean名是否唯一,如果还不是唯一的,则添加该计数器，直到名称唯一位置
+	 * 检查给定Bean名是否唯一,如果还不是唯一的,则添加该计数器，直到名称唯一为止
 	 * Checks the given bean name whether it is unique. If not already unique,
 	 * a counter is added, increasing the counter until the name is unique.
 	 * @param innerBeanName the original name for the inner bean
 	 * @return the adapted name for the inner bean
 	 */
-	private String adaptInnerBeanName(String innerBeanName) {
+	private String  adaptInnerBeanName(String innerBeanName) {
 		// 定义一个实际内部Bean名变量，初始为innerBean名
 		String actualInnerBeanName = innerBeanName;
 		// 定义一个用于计数的计数器，初始为0
