@@ -569,7 +569,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Eagerly cache singletons to be able to resolve circular references
 		// even when triggered by lifecycle interfaces like BeanFactoryAware.
 		// 若当前bean是单例，且spring容器允许循环依赖，且当前bean正在创建，则允许被依赖的对象  不完整实例提前曝光
-		// 一般都会满足条件，不管是否需要这个代理对象，有需要就调用，没需要就不进行调用
+		// 一般都会满足条件，不管是否需要这个代理对象，有需要就调用，没需要就不进行调用，但都会创建
 		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
 				isSingletonCurrentlyInCreation(beanName));
 		if (earlySingletonExposure) {
@@ -610,6 +610,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 从缓存中获取具体的对象
 			Object earlySingletonReference = getSingleton(beanName, false);
 			// earlySingletonReference只有在检测到有循环依赖的情况下才不会为空
+			// 且循环依赖时，使用三级缓存时，为null的情况已经不会出现了
 			if (earlySingletonReference != null) {
 				// 如果exposedObject没有在初始化方法中被改变，也就是没有被增强
 				if (exposedObject == bean) {
@@ -624,7 +625,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 							actualDependentBeans.add(dependentBean);
 						}
 					}
-					// 因为bean创建后所依赖的bean一定是已经创建的
+					// 因为bean创建后所依赖的bean一定是已经创建的（对象要完整才能正常使用）
 					// actualDependentBeans不为空则表示当前bean创建后，其依赖的bean却没有完全创建完，也就是说存在循环依赖
 					if (!actualDependentBeans.isEmpty()) {
 						throw new BeanCurrentlyInCreationException(beanName,

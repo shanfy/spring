@@ -137,6 +137,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	}
 
 	/**
+	 * 将beanName和singletonObject的映射关系添加到该工厂的单例缓存中
 	 * Add the given singleton object to the singleton cache of this factory.
 	 * <p>To be called for eager registration of singletons.
 	 * @param beanName the name of the bean
@@ -144,10 +145,13 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 */
 	protected void addSingleton(String beanName, Object singletonObject) {
 		synchronized (this.singletonObjects) {
+			// 将映射关系添加到单例对象的高速缓存中
 			this.singletonObjects.put(beanName, singletonObject);
+			// 移除beanName在单例工厂缓存中的数据
 			this.singletonFactories.remove(beanName);
+			// 移除beanName在早期单例对象的高速缓存的数据
 			this.earlySingletonObjects.remove(beanName);
-			//已注册完成的bean名称集合
+			// 将beanName添加到注册完成的bean名称单例集中
 			this.registeredSingletons.add(beanName);
 		}
 	}
@@ -267,20 +271,27 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				catch (BeanCreationException ex) {
 					if (recordSuppressedExceptions) {
 						for (Exception suppressedException : this.suppressedExceptions) {
+							//将抑制的异常对象添加到bean创建异常中，这样做的，就是相当于'因Xxx异常导致了Bean创建异常’的说法
 							ex.addRelatedCause(suppressedException);
 						}
 					}
+					// 抛出异常
 					throw ex;
 				}
 				finally {
+					// 如果没有抑制异常记录
 					if (recordSuppressedExceptions) {
+						// 将抑制的异常列表置为null，因为suppressedExceptions是对应单个bean的异常记录，置为null
+						// 可防止异常信息的混乱
 						this.suppressedExceptions = null;
 					}
+					// 创建单例后的回调,默认实现将单例标记为不在创建中
 					// 移除缓存中对该bean的正在加载状态的记录
 					afterSingletonCreation(beanName);
 				}
+				// 生成了新的单例对象
 				if (newSingleton) {
-					//将新创建的bean加入到一级缓存池中，并从二级缓存中移除
+					// 将beanName和singletonObject的映射关系新创建的bean加入到一级缓存池中，并从二级缓存中移除
 					addSingleton(beanName, singletonObject);
 				}
 			}

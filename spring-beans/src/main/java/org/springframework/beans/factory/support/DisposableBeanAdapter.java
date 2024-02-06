@@ -16,30 +16,21 @@
 
 package org.springframework.beans.factory.support;
 
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor;
 import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
+import org.springframework.util.*;
+
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Adapter that implements the {@link DisposableBean} and {@link Runnable}
@@ -104,35 +95,48 @@ class DisposableBeanAdapter implements DisposableBean, Runnable, Serializable {
 		Assert.notNull(bean, "Disposable bean must not be null");
 		this.bean = bean;
 		this.beanName = beanName;
+		// bean是否是DisposableBean实例&&'destroy'没有受外部管理的销毁方法
 		this.invokeDisposableBean =
 				(this.bean instanceof DisposableBean && !beanDefinition.isExternallyManagedDestroyMethod("destroy"));
+		// beanDefinition是否允许访问非公共构造函数和方法
 		this.nonPublicAccessAllowed = beanDefinition.isNonPublicAccessAllowed();
 		this.acc = acc;
+		// 根据需要推断破环方法名
 		String destroyMethodName = inferDestroyMethodIfNecessary(bean, beanDefinition);
+		// 如果destroyMethodName不为nutl&&(bean是否是DisposableBean实例&&'destory'没有受外部管理的销毁方法
+		// &&destroyMethodName是'destroy') &&destroyMethodName不是外部受管理的销毁方法
 		if (destroyMethodName != null && !(this.invokeDisposableBean && "destroy".equals(destroyMethodName)) &&
 				!beanDefinition.isExternallyManagedDestroyMethod(destroyMethodName)) {
 			this.destroyMethodName = destroyMethodName;
+			// 根据beanDefinition是否允许访问非公共构造函数和方法的情况来直找最小参数(最好是none)的销毁方法对象
 			Method destroyMethod = determineDestroyMethod(destroyMethodName);
+			// 如果destroyMethod为null
 			if (destroyMethod == null) {
+				// 如果beanDefinition配置的destroy方法为默认方法
 				if (beanDefinition.isEnforceDestroyMethod()) {
 					throw new BeanDefinitionValidationException("Could not find a destroy method named '" +
 							destroyMethodName + "' on bean with name '" + beanName + "'");
 				}
 			}
 			else {
+				// 获取destroyMethod的参数类型数组
 				Class<?>[] paramTypes = destroyMethod.getParameterTypes();
+				// 如果参数类型数组大于1
 				if (paramTypes.length > 1) {
 					throw new BeanDefinitionValidationException("Method '" + destroyMethodName + "' of bean '" +
 							beanName + "' has more than one parameter - not supported as destroy method");
 				}
+				// 参数类型数组为1&&第一个参数类型不时Boolean类
 				else if (paramTypes.length == 1 && boolean.class != paramTypes[0]) {
 					throw new BeanDefinitionValidationException("Method '" + destroyMethodName + "' of bean '" +
 							beanName + "' has a non-boolean parameter - not supported as destroy method");
 				}
+				// 获取destroyMethod相应的接口方法对象，如果找不到，则返回原始方法
 				destroyMethod = ClassUtils.getInterfaceMethodIfPossible(destroyMethod);
 			}
 			this.destroyMethod = destroyMethod;
 		}
+		// 搜索列表中的所有可支持Bean销毁的DestructionAwareBeanPostProcessors
 		this.beanPostProcessors = filterPostProcessors(postProcessors, bean);
 	}
 
