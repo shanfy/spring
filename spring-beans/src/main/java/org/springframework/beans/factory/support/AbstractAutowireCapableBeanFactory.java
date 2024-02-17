@@ -554,7 +554,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		synchronized (mbd.postProcessingLock) {
 			if (!mbd.postProcessed) {
 				try {
-					// MergedBeanDefinitionPostProcessor后置处理器修改合并bean的定义,(@PostConstruct的处理)
+					// MergedBeanDefinitionPostProcessor后置处理器修改合并bean的定义,
+					// (@PostConstruct的处理在此时执行)
 					// 因为xml和注解可以混用，这里就是正式填充属性前完成类中注解的解析和预处理，方便后续的属性注入
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
 				}
@@ -610,13 +611,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 从缓存中获取具体的对象
 			Object earlySingletonReference = getSingleton(beanName, false);
 			// earlySingletonReference只有在检测到有循环依赖的情况下才不会为空
-			// 且循环依赖时，使用三级缓存时，为null的情况已经不会出现了
+			// 目前为null的情况已经不会出现了，因为现有逻辑一定会提前暴露一个对象避免循环依赖
 			if (earlySingletonReference != null) {
-				// 如果exposedObject没有在初始化方法中被改变，也就是没有被增强
+				// 如果exposedObject没有在初始化方法中被改变，也就是没有被增强，说明不存在循环依赖
 				if (exposedObject == bean) {
 					exposedObject = earlySingletonReference;
 				}
 				else if (!this.allowRawInjectionDespiteWrapping && hasDependentBean(beanName)) {
+					// 获取依赖此bean的其它bean集合
 					String[] dependentBeans = getDependentBeans(beanName);
 					Set<String> actualDependentBeans = new LinkedHashSet<>(dependentBeans.length);
 					for (String dependentBean : dependentBeans) {
@@ -951,16 +953,23 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @return the object to expose as bean reference
 	 */
 	protected Object getEarlyBeanReference(String beanName, RootBeanDefinition mbd, Object bean) {
+		// 默认最终公开的对象是bean
 		Object exposedObject = bean;
-		//二级缓存中的对象可以利用 BeanPostProcessor 接口做一些额外的扩展工作
+		// 二级缓存中的对象可以利用 BeanPostProcessor 接口做一些额外的扩展工作
+		// mbd的systhetic属性:设置此bean定义是否是"synthetic"，一般是指只有A0P相关的pointcut配置或者Advice配置才会将 synthetic设置为true
+		// 如果mdb不是synthetic日此工厂拥有InstantiationAwareBeanPostProcessor
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
+			// 遍历工厂内的所有后处理器
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
+				// 如果bp是SmartInstantiationAwareBeanPostProcessor实例
 				if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
+					// 让exposed0bject经过每个SmartInstantiationAwareBeanPostProcessor的包装
 					SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
 					exposedObject = ibp.getEarlyBeanReference(exposedObject, beanName);
 				}
 			}
 		}
+		// 返回最终经过层层包装后的对象
 		return exposedObject;
 	}
 
@@ -1942,7 +1951,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		Object wrappedBean = bean;
 		// 如果mbd不为null || mdb不是”synthetic“。 一般是指有AOP相关的pointCut配置或者Advice配置才会将synthetic设置为true
 		if (mbd == null || !mbd.isSynthetic()) {
-			// 执⾏所有的BeanPostProcessor#postProcessBeforeInitialization 初始化之前的处理器⽅法，包含对@PostConstruct的处理
+			// 执⾏所有的BeanPostProcessor#postProcessBeforeInitialization 初始化之前的处理器⽅法
 			// 返回的Bean实例可能是原始bean包装器
 			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
 		}

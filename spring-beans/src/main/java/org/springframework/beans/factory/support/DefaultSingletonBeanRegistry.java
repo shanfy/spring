@@ -88,7 +88,10 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 **/
 	private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
-	/** Names of beans that are currently in creation. */
+	/**
+	 * 标识正在被创建的单例bean集合
+	 * Names of beans that are currently in creation.
+	 **/
 	private final Set<String> singletonsCurrentlyInCreation =
 			Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
@@ -103,7 +106,10 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	/** Flag that indicates whether we're currently within destroySingletons. */
 	private boolean singletonsCurrentlyInDestruction = false;
 
-	/** Disposable bean instances: bean name to disposable instance. */
+	/**
+	 * Disposable bean instances: bean name to disposable instance.
+	 * 实例销毁时调用的回调逻辑（DisposableBean#destory()）
+	 * */
 	private final Map<String, Object> disposableBeans = new LinkedHashMap<>();
 
 	/** Map between containing bean names: bean name to Set of bean names that the bean contains. */
@@ -202,17 +208,20 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		// 如果单例池中没有，且要获取的bean此时正在创建中
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
 			synchronized (this.singletonObjects) {
-				//再次尝试从二级缓存 earlySingletonObjects 获取bean对象
+				//再次尝试从二级缓存 earlySingletonObjects即早期单例对象缓存中获取单例对象(之所称成为早期单例对象，
+				// 是因为earlySingletonDbiects里的对象的都是通过提前曝光的ObjectFactory创建出来的，还未进行属性填充等操作)
 				singletonObject = this.earlySingletonObjects.get(beanName);
+				// 如果在早期单例对象缓存中也没有，并且允许创建早期单例对象升用
 				if (singletonObject == null && allowEarlyReference) {
 					//若二级缓存还是没有,此时尝试从三级缓存中获取 bean对应的ObjectFactory对象
 					ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 					if (singletonFactory != null) {
-						//如果三级缓存有，此时通过getObject方法获取到一个eraly bean
-						// 对象，将其加入到二级缓存中(二级缓存中的对象仍不完整，但是可以做一些扩展动作)，并从三级缓存中移除
+						//如果三级缓存有，此时通过getObject方法获取到一个eraly bean对象，将其加入到二级缓存中(二级缓存中的对象仍不完整，但是可以做一些扩展动作)，并从三级缓存中移除
 						// 正，从此处可以看出二级缓存其实不存在也行，这里只是缓存了调用了代理方法的暴露对象，仍然是不完整的，但是省去了再次调用三级缓存代理方法的需要，猜测是处于效率的一个优化
 						singletonObject = singletonFactory.getObject();
+						// 记录在缓存中，二级缓存和三级缓存的对象不能同时存在
 						this.earlySingletonObjects.put(beanName, singletonObject);
+						// 从三级缓存中移除
 						this.singletonFactories.remove(beanName);
 					}
 				}
@@ -546,22 +555,31 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		if (logger.isTraceEnabled()) {
 			logger.trace("Destroying singletons in " + this);
 		}
+		// 同步，使用单例对象的高速缓存:beam名称-bean实例作为锁
 		synchronized (this.singletonObjects) {
+			// 将当前是否在destroysingletons中的标志设置为true，表明正在destroysingletons
 			this.singletonsCurrentlyInDestruction = true;
 		}
 
 		String[] disposableBeanNames;
+		// 同步,使用一次性Bean实例缓存:bean名称-DisposableBean实例作为锁
 		synchronized (this.disposableBeans) {
+			// 复制disposabteBean的key集到一个string数组
 			disposableBeanNames = StringUtils.toStringArray(this.disposableBeans.keySet());
 		}
+		// 遍历disposableBeanNames
 		for (int i = disposableBeanNames.length - 1; i >= 0; i--) {
+			//销毁disposableBeanNames[i])。先销毁依赖fdisposableBeanNames[i])的bean,
+			// 然后再销毁bean。
 			destroySingleton(disposableBeanNames[i]);
 		}
-
+		// 清空在Bean名称之间映射: bean名称-Bean包含的Bean名称集
 		this.containedBeanMap.clear();
+		// 清空在相关的Bean名称之间映射: bean名称-一组相关的Bean名称
 		this.dependentBeanMap.clear();
+		// 清空在相关的Bean名称之间映射: bean名称bean依赖项的Bean名称集
 		this.dependenciesForBeanMap.clear();
-
+		// 清空此注册表中所有缓存的单例实例
 		clearSingletonCache();
 	}
 
