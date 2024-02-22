@@ -1,5 +1,6 @@
+import com.lagou.edu.A;
+import com.lagou.edu.B;
 import com.lagou.edu.LagouBean;
-import com.lagou.edu.UserConfiguration;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -32,9 +33,17 @@ public class IocTest {
 		//可以在创建applicationContext对象的时候将refresh设置为false,然后手动调用刷新容器
 		// applicationContext.refresh();
 
-		LagouBean lagouBean = applicationContext.getBean(LagouBean.class);
+		//LagouBean lagouBean = applicationContext.getBean(LagouBean.class);
 		// UserConfiguration.InnerUser lagouBean = applicationContext.getBean(UserConfiguration.InnerUser.class);
-		System.out.println(lagouBean);
+		//System.out.println(lagouBean);
+
+		A a = applicationContext.getBean(A.class);
+		System.out.println(a.getB());
+
+		B b = applicationContext.getBean(B.class);
+		System.out.println(b.getA());
+		//System.out.println(applicationContext.getBean(A.class));
+		//System.out.println(applicationContext.getBean(B.class));
 	}
 
 

@@ -64,7 +64,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * 用于保存BeanName和创建bean实例之间的关系
 	 * Cache of singleton objects: bean name to bean instance.
 	 **/
-	private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
+	public final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 
 	/**
 	 * 三级缓存
@@ -72,7 +72,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * 用于保存BeanName和创建bean的工厂（ObjectFactory）之间的关系
 	 * Cache of singleton factories: bean name to ObjectFactory.
 	 **/
-	private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
+	public final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
 
 	/**
 	 * 二级缓存
@@ -80,13 +80,13 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * 就可以通过getBean方法获取到，可以方便进行循环依赖的检测，此时对象仍不完整
 	 * Cache of early singleton objects: bean name to bean instance.
 	 **/
-	private final Map<String, Object> earlySingletonObjects = new HashMap<>(16);
+	public final Map<String, Object> earlySingletonObjects = new HashMap<>(16);
 
 	/**
 	 * 保存当前所有已经注册的bean名称
 	 * Set of registered singletons, containing the bean names in registration order.
 	 **/
-	private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
+	public final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
 	/**
 	 * 标识正在被创建的单例bean集合
@@ -229,6 +229,18 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		}
 		return singletonObject;
 	}
+
+/*	@Nullable
+	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+		Object singletonObject = this.singletonObjects.get(beanName);
+		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+			synchronized (this.singletonObjects) {
+				singletonObject = this.earlySingletonObjects.get(beanName);
+				return singletonObject;
+			}
+		}
+		return singletonObject != null ? singletonObject :null;
+	}*/
 
 	/**
 	 * Return the (raw) singleton object registered under the given name,

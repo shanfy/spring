@@ -580,6 +580,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 			// 将当前bean提前以ObjectFactory的形式暴露出来，具体创建会延迟到调用getObject方法，并将其加入到三级缓存singletonFactories中
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
+
+			//earlySingletonObjects.put(beanName, bean);
+			//registeredSingletons.add(beanName);
 		}
 
 		// Initialize the bean instance.

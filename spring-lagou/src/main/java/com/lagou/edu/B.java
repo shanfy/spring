@@ -1,8 +1,6 @@
 package com.lagou.edu;
 
-import org.springframework.beans.factory.FactoryBean;
-
-public class B implements FactoryBean<A> {
+/*public class B implements FactoryBean<A> {
 	@Override
 	public A getObject() throws Exception {
 		return new A();
@@ -11,5 +9,17 @@ public class B implements FactoryBean<A> {
 	@Override
 	public Class<?> getObjectType() {
 		return A.class;
+	}
+}*/
+
+public class B{
+	private A a;
+
+	public A getA() {
+		return a;
+	}
+
+	public void setA(A a) {
+		this.a = a;
 	}
 }
