@@ -64,28 +64,36 @@ public abstract class AopNamespaceUtils {
 
 	public static void registerAspectJAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
-
+		// 注册名为org.springframework.aop.config.internalAutoProxyCreatormbeanDefinition, 其中的class类为'AspectJAwareAdvisorAutoProxycreator'
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+		// 如果指定proxy-target-class=true则使用CGLIB代理，否则使用JDK代理1
+		// 设置AspectJAwareAdvisorAutoProxyCreator类的proxyTargetclass属性
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
+		// 注册到spring的bean工厂中，再次校验是否已注册
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
 	public static void registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
-
+		// 注册AutoProxycreator定义beanName为org.springframework.aop.config.internalAutoProxyCreator的BeanDefinition
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+		// 对于proxy-target-class以及expose-proxy属性的处理,其中beanDefinition的className为AnnotationAwareJAutoProxycreator
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
 	private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, @Nullable Element sourceElement) {
 		if (sourceElement != null) {
+			// 对于proxy-target-class属性的处理
+			// SpringAOP部分使用JDK动态代理或者CGLIB为目标创建代理，如果被代理的目标对象实现了至少一个按口，则会使用JDK动态代理。
+			// 若该目标对象没有实现任何接口，则创建一个cglib代理，
 			boolean proxyTargetClass = Boolean.parseBoolean(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));
 			if (proxyTargetClass) {
 				AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);
 			}
+			// 对expose-proxy属性的处理
 			boolean exposeProxy = Boolean.parseBoolean(sourceElement.getAttribute(EXPOSE_PROXY_ATTRIBUTE));
 			if (exposeProxy) {
 				AopConfigUtils.forceAutoProxyCreatorToExposeProxy(registry);
