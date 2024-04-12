@@ -31,9 +31,10 @@ import org.springframework.core.type.AnnotationMetadata;
  * @since 3.1
  * @see EnableAspectJAutoProxy
  */
-class AspectJAutoProxyRegistrar implements ImportBeanDefinitionRegistrar {
+class  AspectJAutoProxyRegistrar implements ImportBeanDefinitionRegistrar {
 
 	/**
+	 * 注册，升级和配置自动代理器依赖对应的 proxyTargetClass属性在解析@configuration类
 	 * Register, escalate, and configure the AspectJ auto proxy creator based on the value
 	 * of the @{@link EnableAspectJAutoProxy#proxyTargetClass()} attribute on the importing
 	 * {@code @Configuration} class.

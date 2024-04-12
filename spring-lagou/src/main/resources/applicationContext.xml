@@ -50,6 +50,7 @@
 <!--			<aop:before method="beforeMethod" pointcut="execution(public void com.lagou.edu.LagouBean.print())"/>-->
 			<aop:pointcut id="method" expression="execution(public void com.lagou.edu.*.*(..))"/>
 			<aop:before method="beforeMethod"  pointcut-ref="method"/>
+			<aop:after method="afterMethod"  pointcut-ref="method"/>
 		</aop:aspect>
 	</aop:config>
 
